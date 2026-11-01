@@ -200,7 +200,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
     </aside>
     <main>
       <section class="page active" id="dashboard">
-        <h1 class="member-welcome">Selamat Datang, Sofan!</h1>
+        <h1 class="member-welcome" id="memberWelcome">Selamat Datang!</h1>
         <div class="feature-banner"><div><span class="eyebrow">DigitalCoreVision</span><h2>ESKAYVIE</h2><p>Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja</p></div><button class="watch-btn" onclick="showToast('Video pengenalan akan dibuka saat konten dihubungkan.')">▶ &nbsp; TONTON SEKARANG</button></div>
         <div class="feature-image">Area video / banner utama ESKAYVIE<br><small>Gambar referensi dapat dipasang pada tahap integrasi konten</small></div>
         <div class="member-shortcuts"><div class="shortcut"><strong>Konten Pembelajaran</strong><span>Akses materi dan panduan bisnis digital.</span></div><div class="shortcut"><strong>Training</strong><span>Pelajari strategi membangun network.</span></div><div class="shortcut"><strong>Data Leads</strong><span>Kelola prospek dan aktivitas follow-up.</span></div></div>
@@ -232,7 +232,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
             <h2>⌂ &nbsp; Admin Panel</h2>
             <a class="current" href="#admin">▦ &nbsp; Dashboard</a><a href="#admin-members">♙ &nbsp; Data Member</a>
             <div class="group-label">Membership</div><a href="#activation">◇ &nbsp; Aktivasi Premium</a><a href="#history">◷ &nbsp; Riwayat Membership</a><a href="#referrals">⌘ &nbsp; Jaringan Referral</a>
-            <div class="group-label">Platform</div><a href="#content">▤ &nbsp; Konten & Training</a><a href="#settings">⚙ &nbsp; Pengaturan</a><a href="#logout">↪ &nbsp; Logout</a>
+            <div class="group-label">Platform</div><a href="#content">▤ &nbsp; Konten & Training</a><a href="#settings">⚙ &nbsp; Pengaturan</a>
           </aside>
           <div class="admin-main">
             <h2>Dashboard</h2>
@@ -244,6 +244,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
             <div class="admin-bottom-grid"><div class="admin-panel-card"><h3 style="font-size:16px;margin:0 0 20px">Distribusi Member</h3><div style="display:flex;justify-content:space-between;font-size:12px"><b>Premium</b><strong>—</strong></div><div class="admin-progress"><i style="width:0%"></i></div><div style="display:flex;justify-content:space-between;font-size:12px"><b>Gratis</b><strong>—</strong></div><div class="admin-progress blue"><i style="width:0%"></i></div><div style="border-top:1px solid #e5e7eb;padding-top:15px;margin-top:18px;display:flex;justify-content:space-between;font-size:12px"><b>Member dengan Leads</b><strong>—</strong></div><p style="font-size:10px;color:#6b7280">Ringkasan akan terisi setelah data referral terhubung.</p></div>
               <div class="admin-panel-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px"><h3 style="font-size:16px;margin:0">Aktivasi Premium Terbaru</h3><button class="secondary-btn" onclick="showToast('Daftar aktivasi Premium akan dibuat pada tahap berikutnya.')">Lihat Semua »</button></div><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Member</th><th>Sponsor</th><th>Status</th><th>Tanggal</th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:25px">Belum ada riwayat aktivasi Premium.</td></tr></tbody></table></div></div>
             </div>
+            <div class="admin-panel-card" id="dashboardDisplaySettings"><h3 style="font-size:16px;margin:0 0 8px">Pengaturan Tampilan Dashboard Member</h3><p style="font-size:11px;color:#6b7280;margin:0 0 14px">Ubah teks sambutan dan banner yang dilihat member pada halaman Dashboard.</p><div class="field"><label>Teks label banner</label><input id="bannerEyebrowInput" value="DigitalCoreVision"></div><div class="field"><label>Judul banner</label><input id="bannerTitleInput" value="ESKAYVIE"></div><div class="field"><label>Deskripsi banner</label><input id="bannerDescriptionInput" value="Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja"></div><button class="primary-btn" type="button" onclick="saveDashboardDisplaySettings()">Simpan Pengaturan Tampilan</button><p style="font-size:10px;color:#9ca3af;margin:12px 0 0">Untuk tahap preview, pengaturan tersimpan di browser ini. Penyimpanan ke database agar berlaku untuk semua member akan dihubungkan pada tahap integrasi berikutnya.</p></div>
             <div class="notice" style="margin-top:18px">Panel ini merupakan rancangan tampilan. Angka statistik, lisensi, backup, KPI, dan request upgrade belum terhubung ke database. Akses produksi tetap dibatasi khusus untuk Super Admin.</div>
           </div>
         </div>
@@ -280,6 +281,33 @@ function filterMembers() {
   const query = document.getElementById('memberSearch').value.toLowerCase();
   document.querySelectorAll('#memberTable tbody tr').forEach(row => row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none');
 }
+function loadDashboardDisplaySettings() {
+  const defaults = { eyebrow: 'DigitalCoreVision', title: 'ESKAYVIE', description: 'Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja' };
+  let settings = defaults;
+  try { settings = { ...defaults, ...JSON.parse(localStorage.getItem('dcv_dashboard_display') || '{}') }; } catch (error) {}
+  document.querySelector('.feature-banner .eyebrow').textContent = settings.eyebrow;
+  document.querySelector('.feature-banner h2').textContent = settings.title;
+  document.querySelector('.feature-banner p').textContent = settings.description;
+  document.getElementById('bannerEyebrowInput').value = settings.eyebrow;
+  document.getElementById('bannerTitleInput').value = settings.title;
+  document.getElementById('bannerDescriptionInput').value = settings.description;
+}
+function saveDashboardDisplaySettings() {
+  const settings = {
+    eyebrow: document.getElementById('bannerEyebrowInput').value.trim(),
+    title: document.getElementById('bannerTitleInput').value.trim(),
+    description: document.getElementById('bannerDescriptionInput').value.trim()
+  };
+  if (!settings.eyebrow || !settings.title || !settings.description) { showToast('Semua teks banner wajib diisi.'); return; }
+  localStorage.setItem('dcv_dashboard_display', JSON.stringify(settings));
+  loadDashboardDisplaySettings();
+  showToast('Pengaturan tampilan dashboard disimpan di browser ini.');
+}
+function setMemberWelcomeName(name) {
+  const cleanName = (name || '').trim();
+  document.getElementById('memberWelcome').textContent = cleanName ? 'Selamat Datang, ' + cleanName + '!' : 'Selamat Datang!';
+}
+loadDashboardDisplaySettings();
 document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 </script>
 <script>
@@ -302,7 +330,7 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
     loginButton.textContent = 'Koneksi belum siap';
   }
 
-  async function verifyToken(token, email) {
+  async function verifyToken(token, email, fullName) {
     const response = await fetch(SUPABASE_URL + '/rest/v1/rpc/is_super_admin', {
       method: 'POST',
       headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
@@ -314,6 +342,7 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
     sessionStorage.setItem('dcv_access_token', token);
     sessionStorage.setItem('dcv_admin_email', email || 'Super Admin');
     document.getElementById('signedInEmail').textContent = email || 'Super Admin';
+    setMemberWelcomeName(fullName || (email ? email.split('@')[0] : ''));
     loginError.classList.remove('show');
     loginScreen.style.display = 'none';
     document.body.classList.add('admin-authenticated');
@@ -332,7 +361,7 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.msg || result.message || result.error_description || 'Login ditolak (' + response.status + ').');
-      await verifyToken(result.access_token, result.user && result.user.email);
+      await verifyToken(result.access_token, result.user && result.user.email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
     } catch (error) {
       showLoginError('Tidak bisa masuk: ' + (error.message || 'periksa koneksi internet dan konfigurasi Supabase.'));
     } finally {
