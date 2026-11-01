@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DIGITALCOREVISION 2.0 — Stage 1 Preview</title>
+<style>
+:root {
+  --site-primary: #123B66;
+  --site-secondary: #0D9488;
+  --site-background: #F3F7FB;
+  --site-on-primary: #FFFFFF;
+  --site-on-secondary: #FFFFFF;
+  --site-on-background: #17263B;
+  --site-font-body: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --site-font-heading: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --site-heading-scale: 1;
+  --site-spacing-scale: 1;
+  --site-radius-scale: 1;
+  --site-decoration-opacity: 1;
+  color-scheme: light dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: var(--site-font-body); background: light-dark(#e9eff6, #0b1421); color: light-dark(#17263b, #e7eef8); }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+.app-root { min-height: 100vh; width: 100%; border-radius: 0; background-color: light-dark(var(--site-background), #101b2b); color: light-dark(var(--site-on-background), #e7eef8); }
+.topbar { height: 72px; display:flex; align-items:center; justify-content:space-between; padding: 0 calc(26px * var(--site-spacing-scale)); background: light-dark(#fff, #142238); border-bottom:1px solid light-dark(#e2eaf2,#24354d); position:sticky; top:0; z-index:5; }
+.brand { display:flex; align-items:center; gap:12px; font-weight:850; letter-spacing:-.5px; color: light-dark(var(--site-primary),#d8e9ff); }
+.brand-mark { width:38px; height:38px; border-radius:12px; display:grid; place-items:center; background:var(--site-primary); color:white; font-weight:900; }
+.top-actions { display:flex; align-items:center; gap:14px; }
+.pill { padding:7px 11px; border-radius:999px; background:light-dark(#e8f7f5,#153c40); color:light-dark(#08786f,#8ce5d9); font-size:12px; font-weight:750; }
+.avatar { width:34px; height:34px; border-radius:50%; display:grid; place-items:center; background:#dbeafe; color:#123b66; font-weight:800; }
+.layout { display:grid; grid-template-columns:252px minmax(0,1fr); min-height:calc(100vh - 72px); }
+.sidebar { padding:22px 14px; background:light-dark(#fff,#142238); border-right:1px solid light-dark(#e2eaf2,#24354d); }
+.workspace-label { padding:0 12px 12px; color:light-dark(#8493a8,#92a5bd); font-size:10px; font-weight:800; letter-spacing:1.5px; }
+.nav-btn { display:flex; align-items:center; gap:12px; width:100%; padding:11px 12px; margin:3px 0; border:0; border-radius:10px; text-align:left; color:light-dark(#52647a,#b7c6d8); background:transparent; font-weight:650; font-size:13px; }
+.nav-btn:hover { background:light-dark(#f0f5fa,#1b2d46); }
+.nav-btn.active { color:white; background:var(--site-primary); box-shadow:0 6px 16px #123b6628; }
+.nav-icon { width:20px; text-align:center; font-size:16px; }
+.sidebar-foot { margin:25px 8px 0; padding:14px; border-radius:13px; background:light-dark(#eff6fb,#1a2b42); font-size:11px; color:light-dark(#65778c,#a9bad0); line-height:1.55; }
+main { min-width:0; padding:28px clamp(18px,3vw,42px) 46px; max-width:1600px; width:100%; margin:0 auto; }
+.page-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:24px; }
+h1 { font-family:var(--site-font-heading); font-size:calc(27px * var(--site-heading-scale)); letter-spacing:-.8px; margin:0 0 6px; }
+.subtitle { color:light-dark(#718198,#a3b4c9); font-size:13px; }
+.primary-btn { border:0; border-radius:10px; background:var(--site-primary); color:white; padding:11px 15px; font-weight:750; font-size:12px; box-shadow:0 5px 12px #123b6625; }
+.secondary-btn { border:1px solid light-dark(#d8e2ed,#344760); border-radius:10px; padding:10px 13px; color:light-dark(#40536a,#d6e2f0); background:light-dark(#fff,#172940); font-weight:700; font-size:12px; }
+.cards { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:15px; margin-bottom:19px; }
+.card { background:light-dark(#fff,#172940); border:1px solid light-dark(#e4ebf3,#283b55); border-radius:16px; padding:18px; box-shadow:0 8px 22px #18324b08; }
+.metric { display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.metric-label { font-size:12px; color:light-dark(#718198,#a5b6cb); font-weight:650; }
+.metric-value { font-size:27px; font-weight:850; letter-spacing:-1px; margin-top:8px; }
+.metric-icon { width:42px; height:42px; display:grid; place-items:center; border-radius:13px; background:light-dark(#edf4fc,#213b5b); color:var(--site-primary); font-size:19px; }
+.metric-note { margin-top:8px; color:light-dark(#8291a5,#8fa4bd); font-size:10px; }
+.content-grid { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(270px,.85fr); gap:17px; }
+.section-title { font-size:15px; font-weight:800; margin:0; }
+.section-sub { color:light-dark(#8291a5,#9aacc2); font-size:11px; margin-top:5px; }
+.chart { display:flex; align-items:flex-end; gap:12px; height:174px; padding:22px 7px 0; border-bottom:1px solid light-dark(#e7edf4,#2a3d56); }
+.bar-wrap { flex:1; height:100%; display:flex; align-items:flex-end; justify-content:center; position:relative; }
+.bar { width:min(35px,70%); border-radius:7px 7px 2px 2px; background:linear-gradient(180deg,var(--site-secondary),#8bd9cf); min-height:8px; }
+.bar-label { position:absolute; bottom:-23px; font-size:10px; color:light-dark(#8795a8,#9aabc0); }
+.legend { display:flex; gap:17px; margin-top:31px; font-size:10px; color:light-dark(#74849a,#9aabc0); }
+.dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--site-secondary); margin-right:6px; }
+.activity { display:flex; gap:11px; padding:13px 0; border-bottom:1px solid light-dark(#edf1f6,#293b54); }
+.activity:last-child { border:0; }
+.activity-icon { width:32px; height:32px; border-radius:10px; background:light-dark(#eaf5f4,#173d40); display:grid; place-items:center; color:var(--site-secondary); flex:none; }
+.activity strong { display:block; font-size:11px; }
+.activity small { display:block; color:light-dark(#8492a5,#9aadc2); font-size:10px; margin-top:4px; }
+.table-card { margin-top:17px; overflow:hidden; }
+.table-head { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:14px; }
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; min-width:570px; text-align:left; }
+th { color:light-dark(#8795a8,#9aadc2); font-size:10px; letter-spacing:.5px; text-transform:uppercase; padding:11px 10px; border-bottom:1px solid light-dark(#e9eef4,#2b3e57); }
+td { font-size:11px; padding:13px 10px; border-bottom:1px solid light-dark(#edf1f6,#293b54); }
+.status { display:inline-block; padding:5px 8px; border-radius:999px; background:light-dark(#e8f7ef,#153c32); color:light-dark(#16804b,#86e0b5); font-size:9px; font-weight:800; }
+.status.pending { background:light-dark(#fff5df,#49371b); color:light-dark(#9a6800,#ffd27b); }
+.page { display:none; }
+.page.active { display:block; }
+.form-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; }
+.field { display:flex; flex-direction:column; gap:7px; margin:10px 0; }
+.field label { font-size:11px; font-weight:750; color:light-dark(#64758b,#b3c2d4); }
+.field input,.field select { width:100%; padding:11px 12px; border:1px solid light-dark(#dce5ef,#344861); border-radius:9px; background:light-dark(#fff,#102036); color:inherit; outline:none; }
+.field input:focus,.field select:focus { border-color:var(--site-secondary); box-shadow:0 0 0 3px #0d94881a; }
+.search { max-width:240px; }
+.notice { padding:13px 15px; border-radius:12px; background:light-dark(#eaf5fb,#19354c); color:light-dark(#3e617c,#c1d9ec); font-size:11px; line-height:1.6; margin-bottom:17px; }
+.plan { display:flex; align-items:center; justify-content:space-between; gap:15px; padding:15px 0; border-bottom:1px solid light-dark(#e9eef4,#2b3e57); }
+.plan:last-child { border:0; }
+.plan strong { font-size:13px; }
+.plan small { display:block; color:light-dark(#8492a5,#9aadc2); margin-top:4px; font-size:10px; }
+.toast { position:fixed; right:20px; bottom:20px; padding:12px 16px; border-radius:11px; background:#123b66; color:#fff; font-size:12px; box-shadow:0 8px 25px #0003; opacity:0; transform:translateY(8px); transition:.2s; pointer-events:none; z-index:10; }
+.toast.show { opacity:1; transform:translateY(0); }
+.app-root { display:none; }
+body.admin-authenticated .app-root { display:block; }
+.login-screen { min-height:100vh; display:grid; place-items:center; padding:22px; background:linear-gradient(135deg,#0d1b2e,#123b66); }
+.login-card { width:min(420px,100%); padding:30px; border-radius:18px; background:#fff; color:#17263b; box-shadow:0 24px 70px #0005; }
+.login-card h1 { font-size:25px; margin-bottom:8px; }
+.login-card p { color:#64748b; font-size:13px; line-height:1.6; margin:0 0 20px; }
+.login-card .field label { color:#52647a; }
+.login-error { display:none; margin-top:12px; color:#b91c1c; font-size:12px; line-height:1.5; }
+.login-error.show { display:block; }
+.login-note { margin-top:16px; color:#64748b; font-size:11px; line-height:1.5; }
+.modal-backdrop { display:none; position:fixed; inset:0; z-index:9; background:#07142699; align-items:center; justify-content:center; padding:18px; }
+.modal-backdrop.open { display:flex; }
+.modal { width:min(470px,100%); background:light-dark(#fff,#172940); border:1px solid light-dark(#e4ebf3,#31445e); border-radius:17px; padding:22px; box-shadow:0 20px 70px #0004; }
+.modal h2 { font-size:18px; margin:0 0 7px; }
+.modal p { color:light-dark(#78889e,#a6b8ce); font-size:11px; line-height:1.5; }
+.modal-actions { display:flex; justify-content:flex-end; gap:9px; margin-top:17px; }
+/* Tampilan member mengikuti referensi DIGITALCOREVISION */
+.topbar { height:76px; padding:0 max(20px,calc((100vw - 1135px)/2)); gap:24px; }
+.brand { white-space:nowrap; font-size:17px; }
+.brand-mark { border-radius:0; background:transparent; color:var(--site-primary); font-size:22px; width:34px; }
+.member-nav { display:flex; align-items:stretch; align-self:stretch; gap:4px; flex:1; }
+.member-nav .nav-btn { width:auto; margin:0; padding:0 12px; border-radius:0; border-bottom:4px solid transparent; color:light-dark(#45566d,#c5d1df); font-size:14px; font-weight:500; }
+.member-nav .nav-btn:hover { background:transparent; color:var(--site-primary); }
+.member-nav .nav-btn.active { color:#4f46e5; background:transparent; border-bottom-color:#5145f5; box-shadow:none; }
+.member-nav .nav-btn[data-page="leads"] { color:#0dba69; }
+.member-nav .nav-btn[data-page="admin"] { color:#ef4444; }
+.top-actions .pill,.avatar { display:none; }
+.top-actions:after { content:"Logout"; color:white; background:#ef4444; padding:11px 13px; border-radius:4px; font-weight:700; }
+.layout { display:block; min-height:calc(100vh - 76px); }
+.sidebar { display:none; }
+main { max-width:1200px; padding:42px 16px 50px; }
+.page-head { margin-bottom:24px; }
+.member-welcome { font-size:23px; font-weight:800; margin:0 0 25px; }
+.feature-banner { background:#171f30; color:white; border-radius:12px 12px 0 0; padding:25px 24px; display:flex; align-items:center; justify-content:space-between; gap:20px; }
+.feature-banner .eyebrow { display:inline-block; background:#ef343d; color:white; padding:6px 9px; border-radius:5px; font-size:11px; font-weight:800; }
+.feature-banner h2 { margin:10px 0 5px; font-size:23px; }
+.feature-banner p { margin:0; color:#e2e8f0; font-size:13px; }
+.watch-btn { background:#5145ed; color:white; border:0; border-radius:5px; padding:13px 17px; font-weight:800; white-space:nowrap; }
+.feature-image { min-height:290px; display:grid; place-items:center; background:linear-gradient(120deg,#e8edf2,#cbd5e1); color:#475569; text-align:center; padding:30px; font-weight:700; }
+.member-shortcuts { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:15px; margin-top:18px; }
+.shortcut { background:light-dark(#fff,#172940); border:1px solid light-dark(#e4ebf3,#283b55); border-radius:12px; padding:18px; }
+.shortcut strong { display:block; margin-bottom:6px; }
+.shortcut span { color:light-dark(#718198,#a5b6cb); font-size:12px; }
+.admin-shell { display:grid; grid-template-columns:245px minmax(0,1fr); min-height:calc(100vh - 150px); margin:0 -16px -50px; background:#f3f4f6; color:#111827; }
+.admin-sidebar { background:#111827; color:#fff; padding:22px 13px; }
+.admin-sidebar h2 { font-size:21px; margin:0 0 22px; }
+.admin-sidebar a { display:flex; align-items:center; gap:11px; padding:10px 12px; margin:3px 0; border-radius:6px; color:#d1d5db; text-decoration:none; font-size:12px; }
+.admin-sidebar a.current,.admin-sidebar a:hover { background:#374151; color:#fff; }
+.admin-sidebar .group-label { color:#6b7280; font-size:10px; text-transform:uppercase; padding:12px 12px 4px; }
+.admin-main { padding:28px; min-width:0; }
+.admin-main h2 { font-size:27px; font-weight:850; margin:0 0 22px; }
+.admin-license { background:#fff; border-left:4px solid #16a34a; border-radius:12px; padding:17px; margin-bottom:22px; box-shadow:0 5px 18px #1118270b; }
+.admin-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-bottom:22px; }
+.admin-metric { background:#fff; border-radius:12px; padding:20px; border-left:4px solid #4f46e5; box-shadow:0 5px 18px #1118270b; }
+.admin-metric:nth-child(2) { border-color:#0d9488; } .admin-metric:nth-child(3) { border-color:#ca8a04; } .admin-metric:nth-child(4) { border-color:#9333ea; }
+.admin-metric strong { display:block; font-size:28px; font-weight:850; } .admin-metric span { color:#6b7280; font-size:12px; }
+.admin-panel-card { background:#fff; border:1px solid #e5e7eb; border-radius:18px; padding:24px; margin-bottom:20px; box-shadow:0 4px 16px #11182708; }
+.admin-kpis { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+.admin-kpi { background:#f9fafb; border:1px solid #e5e7eb; border-radius:17px; padding:20px 12px; text-align:center; }
+.admin-ring { width:132px; height:132px; border-radius:50%; margin:0 auto 15px; display:grid; place-items:center; background:conic-gradient(#4f46e5 var(--progress),#e5e7eb 0); position:relative; }
+.admin-ring:before { content:""; position:absolute; inset:11px; background:#f9fafb; border-radius:50%; }
+.admin-ring strong { position:relative; font-size:28px; }
+.admin-kpi b { display:block; font-size:12px; text-transform:uppercase; margin-bottom:5px; }
+.admin-kpi small { color:#9ca3af; font-size:10px; }
+.admin-bottom-grid { display:grid; grid-template-columns:minmax(230px,.8fr) minmax(0,1.7fr); gap:18px; }
+.admin-progress { height:9px; background:#e5e7eb; border-radius:20px; overflow:hidden; margin:8px 0 15px; }
+.admin-progress i { display:block; height:100%; border-radius:20px; background:#16a34a; }
+.admin-progress.blue i { background:#2563eb; }
+.admin-table { width:100%; min-width:520px; border-collapse:collapse; font-size:11px; }
+.admin-table th,.admin-table td { padding:12px 9px; text-align:left; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
+.admin-table th { color:#6b7280; font-size:10px; text-transform:uppercase; background:#f9fafb; }
+@media(max-width:900px) { .admin-shell { grid-template-columns:1fr; } .admin-sidebar { display:none; } .admin-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .admin-bottom-grid { grid-template-columns:1fr; } }
+@media(max-width:600px) { .admin-main { padding:20px 14px; } .admin-kpis { grid-template-columns:1fr; } .admin-ring { width:118px; height:118px; } }
+@media(max-width:900px) { .topbar { flex-wrap:wrap; height:auto; min-height:76px; padding:12px 16px 0; gap:8px; } .member-nav { order:3; flex-basis:100%; overflow-x:auto; min-height:48px; } .member-nav .nav-btn { flex:none; padding:0 10px; font-size:12px; } .top-actions { margin-left:auto; } }
+@media(max-width:600px) { .feature-banner { align-items:flex-start; flex-direction:column; } .member-shortcuts { grid-template-columns:1fr; } .feature-image { min-height:190px; } main { padding-top:28px; } }
+@media(max-width:1050px) { .cards { grid-template-columns:repeat(2,minmax(0,1fr)); } .content-grid { grid-template-columns:1fr; } }
+@media(max-width:720px) { .layout { grid-template-columns:1fr; } .sidebar { display:flex; overflow-x:auto; padding:9px; border-right:0; border-bottom:1px solid light-dark(#e2eaf2,#24354d); position:sticky; top:72px; z-index:4; } .workspace-label,.sidebar-foot { display:none; } .nav-btn { width:auto; flex:none; white-space:nowrap; margin:0 3px; padding:10px 12px; } .nav-icon { display:none; } main { padding:22px 14px 35px; } .topbar { padding:0 14px; } .brand { font-size:13px; } .top-actions .pill { display:none; } .page-head { align-items:center; } h1 { font-size:23px; } .cards { gap:9px; } .card { padding:13px; } .metric-value { font-size:23px; } .form-row { grid-template-columns:1fr; } }
+@media(max-width:390px) { .cards { grid-template-columns:1fr 1fr; } .metric-icon { display:none; } }
+</style>
+</head>
+<body>
+<section class="login-screen" id="loginScreen">
+  <form class="login-card" id="adminLoginForm">
+    <div class="brand" style="margin-bottom:24px"><div class="brand-mark">DC</div><span>DIGITALCOREVISION <span style="color:#0d9488">2.0</span></span></div>
+    <h1>Login Super Admin</h1>
+    <p>Masuk menggunakan akun Super Admin yang sudah terdaftar di Supabase.</p>
+    <div class="field"><label for="adminLoginEmail">Email</label><input id="adminLoginEmail" type="email" autocomplete="username" placeholder="Email Super Admin" required></div>
+    <div class="field"><label for="adminLoginPassword">Password</label><input id="adminLoginPassword" type="password" autocomplete="current-password" placeholder="Password" required></div>
+    <button class="primary-btn" id="adminLoginButton" type="submit" style="width:100%;padding:13px">Masuk ke Admin Panel</button>
+    <div class="login-error show" id="loginError" role="status">Memuat halaman login...</div>
+    <div class="login-note">Akses ini khusus Super Admin. Jangan bagikan password kepada siapa pun.</div>
+  </form>
+</section>
+<div class="app-root">
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark">DC</div><span>DIGITALCOREVISION <span style="color:var(--site-secondary)">2.0</span></span></div>
+    <nav class="member-nav"><button class="nav-btn active" data-page="dashboard">Dashboard</button><button class="nav-btn" data-page="content">Konten</button><button class="nav-btn" data-page="training">Training</button><button class="nav-btn" data-page="profile">Profile</button><button class="nav-btn" data-page="leads">Data Leads</button><button class="nav-btn" data-page="admin">Admin Panel</button></nav>
+    <div class="top-actions"><span id="signedInEmail" style="font-size:12px;color:light-dark(#64758b,#b6c6d9)"></span><button class="secondary-btn" id="adminLogoutButton" type="button">Logout</button></div>
+  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="workspace-label">WORKSPACE</div>
+      <button class="nav-btn active" data-page="dashboard"><span class="nav-icon">▦</span>Dashboard</button>
+      <button class="nav-btn" data-page="members"><span class="nav-icon">♙</span>Manajemen Member</button>
+      <button class="nav-btn" data-page="membership"><span class="nav-icon">◇</span>Membership</button>
+      <button class="nav-btn" data-page="content"><span class="nav-icon">▤</span>Konten & Training</button>
+      <button class="nav-btn" data-page="profile"><span class="nav-icon">◉</span>Profil & Pengaturan</button>
+      <div class="sidebar-foot"><strong>Core Platform · Tahap 1</strong><br>Fondasi akun, member, membership, dan kontrol admin. Data pada preview ini masih berupa contoh.</div>
+    </aside>
+    <main>
+      <section class="page active" id="dashboard">
+        <h1 class="member-welcome">Selamat Datang, Sofan!</h1>
+        <div class="feature-banner"><div><span class="eyebrow">DigitalCoreVision</span><h2>ESKAYVIE</h2><p>Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja</p></div><button class="watch-btn" onclick="showToast('Video pengenalan akan dibuka saat konten dihubungkan.')">▶ &nbsp; TONTON SEKARANG</button></div>
+        <div class="feature-image">Area video / banner utama ESKAYVIE<br><small>Gambar referensi dapat dipasang pada tahap integrasi konten</small></div>
+        <div class="member-shortcuts"><div class="shortcut"><strong>Konten Pembelajaran</strong><span>Akses materi dan panduan bisnis digital.</span></div><div class="shortcut"><strong>Training</strong><span>Pelajari strategi membangun network.</span></div><div class="shortcut"><strong>Data Leads</strong><span>Kelola prospek dan aktivitas follow-up.</span></div></div>
+      </section>
+      <section class="page" id="members">
+        <div class="page-head"><div><h1>Manajemen Member</h1><div class="subtitle">Kelola akun, organisasi, dan status akses member.</div></div><button class="primary-btn" onclick="openModal()">＋ Tambah Member</button></div>
+        <div class="notice">Dalam versi produksi, setiap member akan terhubung ke akun autentikasi dan organisasi masing-masing. Admin hanya dapat mengelola data sesuai kewenangannya.</div>
+        <div class="card"><div class="table-head"><div><div class="section-title">Semua Member</div><div class="section-sub">Data contoh untuk demonstrasi antarmuka</div></div><input class="field search" id="memberSearch" placeholder="Cari nama atau email..." oninput="filterMembers()"></div><div class="table-wrap"><table id="memberTable"><thead><tr><th>Nama</th><th>Email</th><th>Organisasi</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead><tbody><tr><td>Rina Amelia</td><td>rina@example.com</td><td>Core Network</td><td>Member</td><td><span class="status">Aktif</span></td><td><button class="secondary-btn" onclick="showToast('Detail member demo.')">Detail</button></td></tr><tr><td>Andi Pratama</td><td>andi@example.com</td><td>Growth Partner</td><td>Admin Organisasi</td><td><span class="status">Aktif</span></td><td><button class="secondary-btn" onclick="showToast('Detail member demo.')">Detail</button></td></tr><tr><td>Siti Rahma</td><td>siti@example.com</td><td>Core Network</td><td>Member</td><td><span class="status pending">Menunggu</span></td><td><button class="secondary-btn" onclick="showToast('Detail member demo.')">Detail</button></td></tr><tr><td>Budi Santoso</td><td>budi@example.com</td><td>Core Network</td><td>Member</td><td><span class="status">Aktif</span></td><td><button class="secondary-btn" onclick="showToast('Detail member demo.')">Detail</button></td></tr></tbody></table></div></div>
+      </section>
+      <section class="page" id="membership">
+        <div class="page-head"><div><h1>Membership</h1><div class="subtitle">Satu jenis membership dengan status akses yang jelas.</div></div><button class="secondary-btn" onclick="showToast('Pengaturan membership demo.')">⚙ Pengaturan</button></div>
+        <div class="notice">Strategi awal: satu paket membership berbayar untuk seluruh pelanggan. Status akun (aktif, menunggu, kedaluwarsa) menentukan apakah pengguna dapat mengakses layanan.</div>
+        <div class="card" style="max-width:720px"><div class="pill" style="display:inline-block">PAKET UTAMA</div><div style="font-size:25px;font-weight:850;margin:14px 0 4px">DigitalCoreVision Membership</div><div class="subtitle">Akses ke fitur platform sesuai kebijakan layanan.</div><div class="plan"><div><strong>Dashboard & profil</strong><small>Ringkasan dan pengaturan akun</small></div><span class="status">Termasuk</span></div><div class="plan"><div><strong>Konten & Academy</strong><small>Materi pembelajaran dan training</small></div><span class="status">Termasuk</span></div><div class="plan"><div><strong>Prospect CRM</strong><small>Pengelolaan prospek dan follow-up</small></div><span class="status">Tahap berikutnya</span></div><div class="plan"><div><strong>AI & WhatsApp Automation</strong><small>Fitur lanjutan dalam roadmap</small></div><span class="status pending">Belum aktif</span></div></div>
+      </section>
+      <section class="page" id="content">
+        <div class="page-head"><div><h1>Konten & Training</h1><div class="subtitle">Pusat materi pembelajaran untuk seluruh member.</div></div><button class="primary-btn" onclick="showToast('Form tambah materi akan dibuat pada tahap konten.')">＋ Tambah Materi</button></div>
+        <div class="cards"><div class="card"><div class="metric-label">Total Materi</div><div class="metric-value">36</div></div><div class="card"><div class="metric-label">Video</div><div class="metric-value">18</div></div><div class="card"><div class="metric-label">PDF & Dokumen</div><div class="metric-value">12</div></div><div class="card"><div class="metric-label">Modul Training</div><div class="metric-value">6</div></div></div>
+        <div class="card"><div class="section-title">Kategori Materi</div><div class="plan"><div><strong>Fundamental Network Marketing</strong><small>Dasar membangun bisnis dan personal branding</small></div><span class="status">12 materi</span></div><div class="plan"><div><strong>Digital Marketing</strong><small>Konten, media sosial, dan pemasaran digital</small></div><span class="status">9 materi</span></div><div class="plan"><div><strong>Prospecting & Follow-up</strong><small>Komunikasi prospek dan pengelolaan relasi</small></div><span class="status">8 materi</span></div><div class="plan"><div><strong>Leadership & Team Building</strong><small>Pengembangan tim dan kepemimpinan</small></div><span class="status">7 materi</span></div></div>
+      </section>
+      <section class="page" id="profile">
+        <div class="page-head"><div><h1>Profil & Pengaturan</h1><div class="subtitle">Informasi administrator dan konfigurasi dasar platform.</div></div></div>
+        <div class="content-grid"><div class="card"><div class="section-title">Profil Administrator</div><div class="form-row"><div class="field"><label>Nama</label><input value="Administrator" id="adminName"></div><div class="field"><label>Email</label><input value="admin@digitalcorevision.com" type="email"></div></div><div class="field"><label>Nama Platform</label><input value="DIGITALCOREVISION 2.0"></div><button class="primary-btn" onclick="showToast('Perubahan profil hanya simulasi preview.')">Simpan Perubahan</button></div><div class="card"><div class="section-title">Konfigurasi Sistem</div><div class="plan"><div><strong>Autentikasi</strong><small>Login email dan password</small></div><span class="status pending">Integrasi berikutnya</span></div><div class="plan"><div><strong>Database</strong><small>Supabase PostgreSQL</small></div><span class="status pending">Belum terhubung</span></div><div class="plan"><div><strong>Multi-organisasi</strong><small>Pemisahan data pelanggan</small></div><span class="status">Rancangan</span></div><div class="plan"><div><strong>Backup</strong><small>Prosedur pencadangan data</small></div><span class="status pending">Belum disiapkan</span></div></div></div>
+      </section>
+      <section class="page" id="training"><div class="page-head"><div><h1>Training</h1><div class="subtitle">Materi training untuk pengembangan bisnis network.</div></div></div><div class="card"><div class="section-title">Program Training</div><p class="section-sub">Materi akan ditampilkan setelah modul training dihubungkan.</p></div></section>
+      <section class="page" id="leads"><div class="page-head"><div><h1>Data Leads</h1><div class="subtitle">Kelola data prospek dan tindak lanjut.</div></div></div><div class="notice">Fitur Data Leads akan tersedia sesuai hak akses membership.</div></section>
+      <section class="page" id="admin">
+        <div class="admin-shell">
+          <aside class="admin-sidebar">
+            <h2>⌂ &nbsp; Admin Panel</h2>
+            <a class="current" href="#admin">▦ &nbsp; Dashboard</a><a href="#admin-members">♙ &nbsp; Data Member</a>
+            <div class="group-label">Membership</div><a href="#activation">◇ &nbsp; Aktivasi Premium</a><a href="#history">◷ &nbsp; Riwayat Membership</a><a href="#referrals">⌘ &nbsp; Jaringan Referral</a>
+            <div class="group-label">Platform</div><a href="#content">▤ &nbsp; Konten & Training</a><a href="#settings">⚙ &nbsp; Pengaturan</a><a href="#logout">↪ &nbsp; Logout</a>
+          </aside>
+          <div class="admin-main">
+            <h2>Dashboard</h2>
+            <div class="admin-license"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><strong style="font-size:17px;color:#15803d">✓ Status Lisensi: Active</strong><p style="font-size:12px;color:#6b7280;margin:6px 0">Status lisensi dan masa aktif platform akan ditampilkan di sini.</p></div><button class="primary-btn" onclick="showToast('Fitur backup akan dihubungkan pada tahap backend.')">↓ &nbsp; Download Backup DB</button></div><p style="font-size:10px;color:#6b7280;border-top:1px solid #e5e7eb;padding-top:10px;margin:10px 0 0">Lakukan pencadangan database secara rutin untuk menjaga keamanan data platform.</p></div>
+            <div class="admin-metrics"><div class="admin-metric"><strong>—</strong><span>Total Member</span></div><div class="admin-metric"><strong>—</strong><span>Total Konten/Training</span></div><div class="admin-metric"><strong>—</strong><span>Request Pending</span></div><div class="admin-metric"><strong>—</strong><span>Konversi Leads</span></div></div>
+            <div class="admin-panel-card"><div style="border-bottom:1px solid #e5e7eb;padding-bottom:17px;margin-bottom:20px"><div style="font-size:10px;font-weight:900;color:#4f46e5;letter-spacing:2px;text-transform:uppercase">◉ Health Check: Kinerja Sistem</div><h3 style="font-size:25px;margin:7px 0">Indikator <span style="color:#4f46e5">Keberhasilan</span> Jaringan</h3><p style="font-size:11px;color:#6b7280;margin:0">KPI akan dihitung dari aktivitas member dan jaringan yang tercatat di database.</p></div>
+              <div class="admin-kpis"><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Aktif Login</b><small>Login 7 hari terakhir · Target 70%</small></div><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Promosi Referral</b><small>Member yang memperoleh leads · Target 50%</small></div><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Duplikasi Sukses</b><small>Member dengan minimal 5 leads · Target 40%</small></div></div>
+            </div>
+            <div class="admin-bottom-grid"><div class="admin-panel-card"><h3 style="font-size:16px;margin:0 0 20px">Distribusi Member</h3><div style="display:flex;justify-content:space-between;font-size:12px"><b>Premium</b><strong>—</strong></div><div class="admin-progress"><i style="width:0%"></i></div><div style="display:flex;justify-content:space-between;font-size:12px"><b>Gratis</b><strong>—</strong></div><div class="admin-progress blue"><i style="width:0%"></i></div><div style="border-top:1px solid #e5e7eb;padding-top:15px;margin-top:18px;display:flex;justify-content:space-between;font-size:12px"><b>Member dengan Leads</b><strong>—</strong></div><p style="font-size:10px;color:#6b7280">Ringkasan akan terisi setelah data referral terhubung.</p></div>
+              <div class="admin-panel-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px"><h3 style="font-size:16px;margin:0">Aktivasi Premium Terbaru</h3><button class="secondary-btn" onclick="showToast('Daftar aktivasi Premium akan dibuat pada tahap berikutnya.')">Lihat Semua »</button></div><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Member</th><th>Sponsor</th><th>Status</th><th>Tanggal</th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:25px">Belum ada riwayat aktivasi Premium.</td></tr></tbody></table></div></div>
+            </div>
+            <div class="notice" style="margin-top:18px">Panel ini merupakan rancangan tampilan. Angka statistik, lisensi, backup, KPI, dan request upgrade belum terhubung ke database. Akses produksi tetap dibatasi khusus untuk Super Admin.</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="modal-backdrop" id="modal"><div class="modal"><h2>Tambah Member</h2><p>Formulir demonstrasi. Akun sungguhan baru dibuat setelah integrasi Supabase Auth pada tahap implementasi backend.</p><div class="field"><label>Nama lengkap</label><input id="newName" placeholder="Nama member"></div><div class="field"><label>Email</label><input id="newEmail" type="email" placeholder="nama@email.com"></div><div class="field"><label>Organisasi</label><input id="newOrg" placeholder="Nama organisasi"></div><div class="modal-actions"><button class="secondary-btn" onclick="closeModal()">Batal</button><button class="primary-btn" onclick="addMember()">Simpan Demo</button></div></div></div>
+<script>
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(el => el.classList.toggle('active', el.id === page));
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.page)));
+function showToast(message) { const toast = document.getElementById('toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2400); }
+function openModal() { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function addMember() {
+  const name = document.getElementById('newName').value.trim();
+  const email = document.getElementById('newEmail').value.trim();
+  const org = document.getElementById('newOrg').value.trim() || 'Belum ditentukan';
+  if (!name || !email) { showToast('Nama dan email wajib diisi.'); return; }
+  const row = document.createElement('tr');
+  [name,email,org,'Member'].forEach(value => { const td = document.createElement('td'); td.textContent = value; row.appendChild(td); });
+  const status = document.createElement('td'); status.innerHTML = '<span class="status pending">Demo</span>'; row.appendChild(status);
+  const action = document.createElement('td'); const btn = document.createElement('button'); btn.className = 'secondary-btn'; btn.textContent = 'Detail'; btn.onclick = () => showToast('Member demo ditambahkan di tampilan ini saja.'); action.appendChild(btn); row.appendChild(action);
+  document.querySelector('#memberTable tbody').prepend(row);
+  closeModal(); ['newName','newEmail','newOrg'].forEach(id => document.getElementById(id).value = '');
+  showToast('Member demo ditambahkan. Belum tersimpan ke database.');
+}
+function filterMembers() {
+  const query = document.getElementById('memberSearch').value.toLowerCase();
+  document.querySelectorAll('#memberTable tbody tr').forEach(row => row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none');
+}
+document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+</script>
+<script>
+(function () {
+  const loginScreen = document.getElementById('loginScreen');
+  const loginForm = document.getElementById('adminLoginForm');
+  const loginButton = document.getElementById('adminLoginButton');
+  const loginError = document.getElementById('loginError');
+  const SUPABASE_URL = 'https://slygdkibtwgepjxsndjo.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
+
+  function showLoginError(message) {
+    loginError.textContent = message;
+    loginError.classList.add('show');
+  }
+
+  function showStartupError(message) {
+    showLoginError(message);
+    loginButton.disabled = true;
+    loginButton.textContent = 'Koneksi belum siap';
+  }
+
+  async function verifyToken(token, email) {
+    const response = await fetch(SUPABASE_URL + '/rest/v1/rpc/is_super_admin', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    const result = await response.text();
+    if (!response.ok) throw new Error('Verifikasi Super Admin gagal (' + response.status + '): ' + result);
+    if (result !== 'true') throw new Error('Akun ini belum terdaftar sebagai Super Admin.');
+    sessionStorage.setItem('dcv_access_token', token);
+    sessionStorage.setItem('dcv_admin_email', email || 'Super Admin');
+    document.getElementById('signedInEmail').textContent = email || 'Super Admin';
+    loginError.classList.remove('show');
+    loginScreen.style.display = 'none';
+    document.body.classList.add('admin-authenticated');
+  }
+
+  loginForm.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    loginError.classList.remove('show');
+    loginButton.disabled = true;
+    loginButton.textContent = 'Memeriksa akun...';
+    try {
+      const response = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: document.getElementById('adminLoginEmail').value.trim(), password: document.getElementById('adminLoginPassword').value })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.msg || result.message || result.error_description || 'Login ditolak (' + response.status + ').');
+      await verifyToken(result.access_token, result.user && result.user.email);
+    } catch (error) {
+      showLoginError('Tidak bisa masuk: ' + (error.message || 'periksa koneksi internet dan konfigurasi Supabase.'));
+    } finally {
+      loginButton.disabled = false;
+      loginButton.textContent = 'Masuk ke Admin Panel';
+    }
+  });
+
+  document.getElementById('adminLogoutButton').addEventListener('click', function () {
+    sessionStorage.removeItem('dcv_access_token');
+    sessionStorage.removeItem('dcv_admin_email');
+    document.body.classList.remove('admin-authenticated');
+    loginScreen.style.display = 'grid';
+    loginForm.reset();
+  });
+
+  loginError.textContent = 'Form login siap. Silakan masuk dengan akun Super Admin.';
+  const savedToken = sessionStorage.getItem('dcv_access_token');
+  if (savedToken) verifyToken(savedToken, sessionStorage.getItem('dcv_admin_email')).catch(function (error) {
+    sessionStorage.removeItem('dcv_access_token');
+    showLoginError('Sesi sebelumnya tidak berlaku: ' + error.message);
+  });
+})();
+</script>
+</body>
+</html>
