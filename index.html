@@ -244,6 +244,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
               <div class="admin-panel-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px"><h3 style="font-size:16px;margin:0">Aktivasi Premium Terbaru</h3><button class="secondary-btn" onclick="showToast('Daftar aktivasi Premium akan dibuat pada tahap berikutnya.')">Lihat Semua »</button></div><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Member</th><th>Sponsor</th><th>Status</th><th>Tanggal</th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:25px">Belum ada riwayat aktivasi Premium.</td></tr></tbody></table></div></div>
             </div>
             <div class="admin-panel-card" id="admin-members"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div><h3 style="font-size:17px;margin:0 0 5px">Data Member</h3><p style="font-size:11px;color:#6b7280;margin:0">Daftar profil dan status membership dari Supabase.</p></div><button class="secondary-btn" type="button" id="refreshAdminMembers">↻ Muat Ulang</button></div><input id="adminMemberSearch" class="field" style="width:min(320px,100%);padding:10px 12px;margin:0 0 14px;border:1px solid #d1d5db;border-radius:8px" placeholder="Cari nama atau email member..."><div id="adminMembersMessage" style="font-size:12px;color:#64748b;padding:12px 0">Data member belum dimuat.</div><div style="overflow-x:auto"><table class="admin-table" id="adminMembersTable"><thead><tr><th>Nama</th><th>Email</th><th>Membership</th><th>Masa Premium</th><th>Tanggal Daftar</th></tr></thead><tbody></tbody></table></div></div>
+            <div class="admin-panel-card" id="activation"><h3 style="font-size:18px;margin:0 0 6px">Aktivasi Premium</h3><p style="font-size:11px;color:#6b7280;margin:0 0 16px">Aktifkan atau perpanjang Premium setelah pembayaran diverifikasi.</p><form id="premiumActivationForm"><div class="field"><label for="premiumMemberSelect">Pilih member</label><select id="premiumMemberSelect" required><option value="">Memuat daftar member...</option></select></div><div class="form-row"><div class="field"><label for="premiumDuration">Masa aktif (hari)</label><input id="premiumDuration" type="number" min="1" step="1" value="30" required></div><div class="field"><label for="premiumAmount">Nominal pembayaran (Rp, opsional)</label><input id="premiumAmount" type="number" min="0" step="1" placeholder="Contoh: 150000"></div></div><div class="field"><label for="premiumPaymentReference">Referensi pembayaran (opsional)</label><input id="premiumPaymentReference" maxlength="200" placeholder="Contoh: transfer 02/11/2026"></div><div class="field"><label for="premiumNotes">Catatan (opsional)</label><input id="premiumNotes" maxlength="500" placeholder="Catatan verifikasi pembayaran"></div><button class="primary-btn" id="premiumActivationButton" type="submit">Aktifkan Premium</button><span id="premiumActivationMessage" style="font-size:11px;color:#64748b;margin-left:10px" role="status"></span></form><p style="font-size:10px;color:#9ca3af;margin:14px 0 0">Durasi fleksibel. Default 30 hari; perpanjangan sebelum masa aktif habis akan menambahkan durasi dari tanggal kedaluwarsa sebelumnya.</p></div>
             <div class="admin-panel-card" id="dashboardDisplaySettings"><h3 style="font-size:16px;margin:0 0 8px">Pengaturan Tampilan Dashboard Member</h3><p style="font-size:11px;color:#6b7280;margin:0 0 14px">Ubah teks sambutan dan banner yang dilihat member pada halaman Dashboard.</p><div class="field"><label>Teks label banner</label><input id="bannerEyebrowInput" value="DigitalCoreVision"></div><div class="field"><label>Judul banner</label><input id="bannerTitleInput" value="ESKAYVIE"></div><div class="field"><label>Deskripsi banner</label><input id="bannerDescriptionInput" value="Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja"></div><button class="primary-btn" type="button" onclick="saveDashboardDisplaySettings()">Simpan Pengaturan Tampilan</button><p style="font-size:10px;color:#9ca3af;margin:12px 0 0">Untuk tahap preview, pengaturan tersimpan di browser ini. Penyimpanan ke database agar berlaku untuk semua member akan dihubungkan pada tahap integrasi berikutnya.</p></div>
             <div class="notice" style="margin-top:18px">Panel ini merupakan rancangan tampilan. Angka statistik, lisensi, backup, KPI, dan request upgrade belum terhubung ke database. Akses produksi tetap dibatasi khusus untuk Super Admin.</div>
           </div>
@@ -373,11 +374,72 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
     }
   }
 
+  async function loadActivationMembers() {
+    const select = document.getElementById('premiumMemberSelect');
+    if (!select) return;
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token) return;
+    select.innerHTML = '<option value="">Memuat daftar member...</option>';
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email&order=full_name.asc', { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token } });
+      const rows = await response.json();
+      if (!response.ok) throw new Error(rows.message || 'Gagal mengambil daftar member.');
+      select.innerHTML = '<option value="">-- Pilih member --</option>';
+      rows.forEach(member => {
+        const option = document.createElement('option');
+        option.value = member.id;
+        option.textContent = (member.full_name || 'Tanpa nama') + ' — ' + (member.email || member.id);
+        select.appendChild(option);
+      });
+      if (!rows.length) select.innerHTML = '<option value="">Belum ada member</option>';
+    } catch (error) {
+      select.innerHTML = '<option value="">Gagal memuat member</option>';
+      document.getElementById('premiumActivationMessage').textContent = error.message;
+    }
+  }
+
+  document.getElementById('premiumActivationForm').addEventListener('submit', async function (event) {
+    event.preventDefault();
+    const button = document.getElementById('premiumActivationButton');
+    const message = document.getElementById('premiumActivationMessage');
+    const memberId = document.getElementById('premiumMemberSelect').value;
+    const duration = Number(document.getElementById('premiumDuration').value);
+    const amountInput = document.getElementById('premiumAmount').value;
+    if (!memberId || !Number.isInteger(duration) || duration < 1) { message.textContent = 'Pilih member dan isi durasi minimal 1 hari.'; return; }
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token) { message.textContent = 'Sesi berakhir. Silakan login kembali.'; return; }
+    button.disabled = true;
+    button.textContent = 'Memproses aktivasi...';
+    message.textContent = '';
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/rpc/activate_member_premium', {
+        method: 'POST',
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_member_id: memberId, p_duration_days: duration, p_payment_reference: document.getElementById('premiumPaymentReference').value.trim() || null, p_amount: amountInput === '' ? null : Number(amountInput), p_notes: document.getElementById('premiumNotes').value.trim() || null })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || result.error || 'Aktivasi gagal (' + response.status + ').');
+      message.textContent = 'Berhasil! Premium aktif untuk ' + duration + ' hari.';
+      showToast('Aktivasi Premium berhasil.');
+      document.getElementById('premiumPaymentReference').value = '';
+      document.getElementById('premiumAmount').value = '';
+      document.getElementById('premiumNotes').value = '';
+      await loadAdminMembers();
+    } catch (error) {
+      message.textContent = 'Gagal: ' + (error.message || 'Periksa koneksi Supabase.');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Aktifkan Premium';
+    }
+  });
+
   function filterAdminMembers() {
     const query = (document.getElementById('adminMemberSearch')?.value || '').trim().toLowerCase();
     document.querySelectorAll('#adminMembersTable tbody tr').forEach(row => { row.style.display = row.dataset.search.includes(query) ? '' : 'none'; });
   }
   window.loadAdminMembers = loadAdminMembers;
+  window.loadActivationMembers = loadActivationMembers;
+  document.querySelector('.admin-sidebar a[href="#activation"]').addEventListener('click', loadActivationMembers);
   document.getElementById('refreshAdminMembers').addEventListener('click', loadAdminMembers);
   document.getElementById('adminMemberSearch').addEventListener('input', filterAdminMembers);
 
