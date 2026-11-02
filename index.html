@@ -243,6 +243,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
             <div class="admin-bottom-grid"><div class="admin-panel-card"><h3 style="font-size:16px;margin:0 0 20px">Distribusi Member</h3><div style="display:flex;justify-content:space-between;font-size:12px"><b>Premium</b><strong>—</strong></div><div class="admin-progress"><i style="width:0%"></i></div><div style="display:flex;justify-content:space-between;font-size:12px"><b>Gratis</b><strong>—</strong></div><div class="admin-progress blue"><i style="width:0%"></i></div><div style="border-top:1px solid #e5e7eb;padding-top:15px;margin-top:18px;display:flex;justify-content:space-between;font-size:12px"><b>Member dengan Leads</b><strong>—</strong></div><p style="font-size:10px;color:#6b7280">Ringkasan akan terisi setelah data referral terhubung.</p></div>
               <div class="admin-panel-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px"><h3 style="font-size:16px;margin:0">Aktivasi Premium Terbaru</h3><button class="secondary-btn" onclick="showToast('Daftar aktivasi Premium akan dibuat pada tahap berikutnya.')">Lihat Semua »</button></div><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Member</th><th>Sponsor</th><th>Status</th><th>Tanggal</th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:25px">Belum ada riwayat aktivasi Premium.</td></tr></tbody></table></div></div>
             </div>
+            <div class="admin-panel-card" id="admin-members"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div><h3 style="font-size:17px;margin:0 0 5px">Data Member</h3><p style="font-size:11px;color:#6b7280;margin:0">Daftar profil dan status membership dari Supabase.</p></div><button class="secondary-btn" type="button" id="refreshAdminMembers">↻ Muat Ulang</button></div><input id="adminMemberSearch" class="field" style="width:min(320px,100%);padding:10px 12px;margin:0 0 14px;border:1px solid #d1d5db;border-radius:8px" placeholder="Cari nama atau email member..."><div id="adminMembersMessage" style="font-size:12px;color:#64748b;padding:12px 0">Data member belum dimuat.</div><div style="overflow-x:auto"><table class="admin-table" id="adminMembersTable"><thead><tr><th>Nama</th><th>Email</th><th>Membership</th><th>Masa Premium</th><th>Tanggal Daftar</th></tr></thead><tbody></tbody></table></div></div>
             <div class="admin-panel-card" id="dashboardDisplaySettings"><h3 style="font-size:16px;margin:0 0 8px">Pengaturan Tampilan Dashboard Member</h3><p style="font-size:11px;color:#6b7280;margin:0 0 14px">Ubah teks sambutan dan banner yang dilihat member pada halaman Dashboard.</p><div class="field"><label>Teks label banner</label><input id="bannerEyebrowInput" value="DigitalCoreVision"></div><div class="field"><label>Judul banner</label><input id="bannerTitleInput" value="ESKAYVIE"></div><div class="field"><label>Deskripsi banner</label><input id="bannerDescriptionInput" value="Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja"></div><button class="primary-btn" type="button" onclick="saveDashboardDisplaySettings()">Simpan Pengaturan Tampilan</button><p style="font-size:10px;color:#9ca3af;margin:12px 0 0">Untuk tahap preview, pengaturan tersimpan di browser ini. Penyimpanan ke database agar berlaku untuk semua member akan dihubungkan pada tahap integrasi berikutnya.</p></div>
             <div class="notice" style="margin-top:18px">Panel ini merupakan rancangan tampilan. Angka statistik, lisensi, backup, KPI, dan request upgrade belum terhubung ke database. Akses produksi tetap dibatasi khusus untuk Super Admin.</div>
           </div>
@@ -257,9 +258,25 @@ main { max-width:1200px; padding:42px 16px 50px; }
 function navigate(page) {
   document.querySelectorAll('.page').forEach(el => el.classList.toggle('active', el.id === page));
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+  if (page === 'admin' && typeof window.loadAdminMembers === 'function') window.loadAdminMembers();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.page)));
+document.querySelectorAll('.admin-sidebar a[href^="#"]').forEach(link => {
+  link.addEventListener('click', event => {
+    event.preventDefault();
+    const targetId = link.getAttribute('href').slice(1);
+    const target = document.getElementById(targetId);
+    if (!target) {
+      showToast('Menu ini akan diaktifkan pada tahap berikutnya.');
+      return;
+    }
+    if (!document.getElementById('admin').classList.contains('active')) navigate('admin');
+    document.querySelectorAll('.admin-sidebar a').forEach(item => item.classList.remove('current'));
+    link.classList.add('current');
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
 function showToast(message) { const toast = document.getElementById('toast'); toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2400); }
 function openModal() { document.getElementById('modal').classList.add('open'); }
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
@@ -317,6 +334,52 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
   const loginError = document.getElementById('loginError');
   const SUPABASE_URL = 'https://slygdkibtwgepjxsndjo.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
+
+  async function loadAdminMembers() {
+    const message = document.getElementById('adminMembersMessage');
+    const body = document.querySelector('#adminMembersTable tbody');
+    if (!message || !body) return;
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token) { message.textContent = 'Sesi Super Admin tidak ditemukan. Silakan login kembali.'; return; }
+    message.textContent = 'Mengambil data member dari Supabase...';
+    body.replaceChildren();
+    const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
+    try {
+      const requests = [
+        fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email,created_at&order=created_at.desc', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/member_memberships?select=member_id,membership_type,premium_expires_at', { headers })
+      ];
+      const responses = await Promise.all(requests);
+      const payloads = await Promise.all(responses.map(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || data.error || 'Permintaan database gagal (' + response.status + ').');
+        return data;
+      }));
+      const memberships = new Map((payloads[1] || []).map(item => [item.member_id, item]));
+      const rows = payloads[0] || [];
+      rows.forEach(member => {
+        const membership = memberships.get(member.id);
+        const isPremiumActive = membership && membership.membership_type === 'premium' && membership.premium_expires_at && new Date(membership.premium_expires_at) > new Date();
+        const tr = document.createElement('tr');
+        const values = [member.full_name || '—', member.email || '—', isPremiumActive ? 'Premium Aktif' : 'Gratis / Kedaluwarsa', membership && membership.premium_expires_at ? new Date(membership.premium_expires_at).toLocaleDateString('id-ID') : '—', member.created_at ? new Date(member.created_at).toLocaleDateString('id-ID') : '—'];
+        values.forEach(value => { const td = document.createElement('td'); td.textContent = value; tr.appendChild(td); });
+        tr.dataset.search = values.slice(0, 2).join(' ').toLowerCase();
+        body.appendChild(tr);
+      });
+      message.textContent = 'Berhasil memuat ' + rows.length + ' profil member.';
+      filterAdminMembers();
+    } catch (error) {
+      message.textContent = 'Gagal memuat data: ' + (error.message || 'Periksa koneksi dan kebijakan RLS Supabase.');
+    }
+  }
+
+  function filterAdminMembers() {
+    const query = (document.getElementById('adminMemberSearch')?.value || '').trim().toLowerCase();
+    document.querySelectorAll('#adminMembersTable tbody tr').forEach(row => { row.style.display = row.dataset.search.includes(query) ? '' : 'none'; });
+  }
+  window.loadAdminMembers = loadAdminMembers;
+  document.getElementById('refreshAdminMembers').addEventListener('click', loadAdminMembers);
+  document.getElementById('adminMemberSearch').addEventListener('input', filterAdminMembers);
 
   function showLoginError(message) {
     loginError.textContent = message;
