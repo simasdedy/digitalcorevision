@@ -90,42 +90,8 @@ td { font-size:11px; padding:13px 10px; border-bottom:1px solid light-dark(#edf1
 .toast { position:fixed; right:20px; bottom:20px; padding:12px 16px; border-radius:11px; background:#123b66; color:#fff; font-size:12px; box-shadow:0 8px 25px #0003; opacity:0; transform:translateY(8px); transition:.2s; pointer-events:none; z-index:10; }
 .toast.show { opacity:1; transform:translateY(0); }
 .app-root { display:none; }
-body.admin-authenticated .app-root,
-body.member-authenticated .app-root {
-  display: block;
-}
-
-.auth-tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 18px;
-}
-
-.auth-tab {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #dce5ef;
-  border-radius: 8px;
-  background: #f1f5f9;
-  color: #52647a;
-  font-weight: 700;
-}
-
-.auth-tab.active {
-  background: #123b66;
-  color: white;
-}
-
-.auth-panel { display: none; }
-.auth-panel.active { display: block; }
-
-.auth-message {
-  margin-top: 12px;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.member-only-hidden { display: none !important; }
+body.admin-authenticated .app-root, body.member-authenticated .app-root { display:block; }
+body.member-authenticated [data-page="admin"], body.member-authenticated [data-page="members"], body.member-authenticated [data-page="membership"] { display:none !important; }
 .login-screen { min-height:100vh; display:grid; place-items:center; padding:22px; background:linear-gradient(135deg,#0d1b2e,#123b66); }
 .login-card { width:min(420px,100%); padding:30px; border-radius:18px; background:#fff; color:#17263b; box-shadow:0 24px 70px #0005; }
 .login-card h1 { font-size:25px; margin-bottom:8px; }
@@ -134,6 +100,10 @@ body.member-authenticated .app-root {
 .login-error { display:none; margin-top:12px; color:#b91c1c; font-size:12px; line-height:1.5; }
 .login-error.show { display:block; }
 .login-note { margin-top:16px; color:#64748b; font-size:11px; line-height:1.5; }
+.login-tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:0 0 20px; }
+.login-tabs button { border:1px solid #dce5ef; border-radius:9px; padding:10px; background:#f8fafc; color:#52647a; font-weight:750; font-size:12px; }
+.login-tabs button.active { background:#123b66; border-color:#123b66; color:#fff; }
+.auth-form[hidden] { display:none; }
 .modal-backdrop { display:none; position:fixed; inset:0; z-index:9; background:#07142699; align-items:center; justify-content:center; padding:18px; }
 .modal-backdrop.open { display:flex; }
 .modal { width:min(470px,100%); background:light-dark(#fff,#172940); border:1px solid light-dark(#e4ebf3,#31445e); border-radius:17px; padding:22px; box-shadow:0 20px 70px #0004; }
@@ -206,80 +176,27 @@ main { max-width:1200px; padding:42px 16px 50px; }
 <body>
 <section class="login-screen" id="loginScreen">
   <div class="login-card">
-    <div class="brand" style="margin-bottom:24px">
-      <div class="brand-mark">DC</div>
-      <span>DIGITALCOREVISION <span style="color:#0d9488">2.0</span></span>
-    </div>
-
-    <div class="auth-tabs">
-      <button class="auth-tab active" type="button" data-auth-tab="memberLogin">Login Member</button>
-      <button class="auth-tab" type="button" data-auth-tab="memberRegister">Daftar Member</button>
-      <button class="auth-tab" type="button" data-auth-tab="adminLogin">Super Admin</button>
-    </div>
-
-    <div class="auth-panel active" id="memberLogin">
-      <h1>Login Member</h1>
-      <p>Masuk ke akun DIGITALCOREVISION untuk mengakses dashboard dan materi pembelajaran.</p>
-
-      <form id="memberLoginForm">
-        <div class="field">
-          <label>Email</label>
-          <input id="memberLoginEmail" type="email" autocomplete="username" placeholder="Email terdaftar" required>
-        </div>
-        <div class="field">
-          <label>Password</label>
-          <input id="memberLoginPassword" type="password" autocomplete="current-password" placeholder="Password" required>
-        </div>
-        <button class="primary-btn" id="memberLoginButton" type="submit" style="width:100%;padding:13px">Masuk ke Dashboard</button>
-      </form>
-      <div class="auth-message" id="memberLoginMessage" role="status"></div>
-    </div>
-
-    <div class="auth-panel" id="memberRegister">
-      <h1>Daftar Member</h1>
-      <p>Buat akun baru untuk bergabung dengan DIGITALCOREVISION.</p>
-
-      <form id="memberRegisterForm">
-        <div class="field">
-          <label>Nama Lengkap</label>
-          <input id="registerFullName" type="text" autocomplete="name" placeholder="Nama lengkap" required>
-        </div>
-        <div class="field">
-          <label>Email</label>
-          <input id="registerEmail" type="email" autocomplete="email" placeholder="Email aktif" required>
-        </div>
-        <div class="field">
-          <label>Password</label>
-          <input id="registerPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Minimal 8 karakter" required>
-        </div>
-        <div class="field">
-          <label>Kode Referral Sponsor</label>
-          <input id="registerReferral" type="text" placeholder="Masukkan kode referral" required>
-        </div>
-        <button class="primary-btn" id="memberRegisterButton" type="submit" style="width:100%;padding:13px">Daftar Sekarang</button>
-      </form>
-      <div class="auth-message" id="memberRegisterMessage" role="status"></div>
-      <div class="login-note">Pastikan kode referral benar dan gunakan email yang aktif untuk konfirmasi pendaftaran.</div>
-    </div>
-
-    <div class="auth-panel" id="adminLogin">
-      <h1>Login Super Admin</h1>
-      <p>Masuk menggunakan akun Super Admin yang sudah terdaftar di Supabase.</p>
-      <form id="adminLoginForm">
-        <div class="field">
-          <label>Email</label>
-          <input id="adminLoginEmail" type="email" autocomplete="username" placeholder="Email Super Admin" required>
-        </div>
-        <div class="field">
-          <label>Password</label>
-          <input id="adminLoginPassword" type="password" autocomplete="current-password" placeholder="Password" required>
-        </div>
-        <button class="primary-btn" id="adminLoginButton" type="submit" style="width:100%;padding:13px">Masuk ke Admin Panel</button>
-      </form>
-      <div class="login-error" id="loginError" role="status"></div>
-    </div>
-
-    <div class="login-note">DIGITALCOREVISION 2.0 · Member Access Platform</div>
+    <div class="brand" style="margin-bottom:24px"><div class="brand-mark">DC</div><span>DIGITALCOREVISION <span style="color:#0d9488">2.0</span></span></div>
+    <div class="login-tabs"><button type="button" class="active" id="showAdminTab">Super Admin</button><button type="button" id="showMemberTab">Member</button></div>
+    <form class="auth-form" id="adminLoginForm">
+    <h1>Login Super Admin</h1>
+    <p>Masuk menggunakan akun Super Admin yang sudah terdaftar di Supabase.</p>
+    <div class="field"><label for="adminLoginEmail">Email</label><input id="adminLoginEmail" type="email" autocomplete="username" placeholder="Email Super Admin" required></div>
+    <div class="field"><label for="adminLoginPassword">Password</label><input id="adminLoginPassword" type="password" autocomplete="current-password" placeholder="Password" required></div>
+    <button class="primary-btn" id="adminLoginButton" type="submit" style="width:100%;padding:13px">Masuk ke Admin Panel</button>
+    </form>
+    <form class="auth-form" id="memberAuthForm" hidden>
+      <h1 id="memberAuthTitle">Login Member</h1>
+      <p id="memberAuthDescription">Masuk ke akun DIGITALCOREVISION Anda.</p>
+      <div id="memberNameField" class="field" hidden><label for="memberFullName">Nama lengkap</label><input id="memberFullName" type="text" autocomplete="name" placeholder="Nama lengkap"></div>
+      <div class="field"><label for="memberEmail">Email</label><input id="memberEmail" type="email" autocomplete="email" placeholder="Email aktif" required></div>
+      <div class="field"><label for="memberPassword">Password</label><input id="memberPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Minimal 6 karakter" required></div>
+      <div id="memberReferralField" class="field" hidden><label for="memberReferral">Kode referral (opsional)</label><input id="memberReferral" type="text" placeholder="Kode referral sponsor"></div>
+      <button class="primary-btn" id="memberSubmitButton" type="submit" style="width:100%;padding:13px">Login Member</button>
+      <button type="button" id="toggleMemberSignup" class="secondary-btn" style="width:100%;margin-top:9px">Belum punya akun? Daftar Member</button>
+    </form>
+    <div class="login-error show" id="loginError" role="status">Memuat halaman login...</div>
+    <div class="login-note">Gunakan akses Super Admin untuk pengelolaan platform atau akses Member untuk belajar dan menggunakan layanan. Jangan bagikan password Anda.</div>
   </div>
 </section>
 <div class="app-root">
@@ -429,320 +346,269 @@ loadDashboardDisplaySettings();
 document.getElementById('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 </script>
 <script>
-<script>
 (function () {
   const loginScreen = document.getElementById('loginScreen');
   const loginForm = document.getElementById('adminLoginForm');
   const loginButton = document.getElementById('adminLoginButton');
   const loginError = document.getElementById('loginError');
-
   const SUPABASE_URL = 'https://slygdkibtwgepjxsndjo.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
 
-  function showMessage(id, message, success = false) {
-    const element = document.getElementById(id);
-    element.textContent = message;
-    element.style.background = success ? '#ecfdf5' : '#eff6ff';
-    element.style.color = success ? '#047857' : '#1e40af';
-    element.classList.add('show');
-  }
-
-  function switchAuthTab(tab) {
-    document.querySelectorAll('[data-auth-tab]').forEach(button => {
-      button.classList.toggle('active', button.dataset.authTab === tab);
-    });
-
-    document.querySelectorAll('.auth-panel').forEach(panel => {
-      panel.classList.toggle('active', panel.id === tab);
-    });
-  }
-
-  document.querySelectorAll('[data-auth-tab]').forEach(button => {
-    button.addEventListener('click', () => switchAuthTab(button.dataset.authTab));
-  });
-
-  // Mengisi kode referral dari URL ?ref=KODE
-  const urlReferral = new URLSearchParams(window.location.search).get('ref');
-  if (urlReferral) {
-    document.getElementById('registerReferral').value =
-      urlReferral.trim().toUpperCase();
-    switchAuthTab('memberRegister');
-  }
-
-  async function supabaseRequest(path, options = {}) {
-    const response = await fetch(SUPABASE_URL + path, {
-      ...options,
-      headers: {
-        apikey: SUPABASE_KEY,
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-      }
-    });
-
-    const result = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(
-        result.msg ||
-        result.message ||
-        result.error_description ||
-        result.error ||
-        'Permintaan gagal (' + response.status + ').'
-      );
-    }
-
-    return result;
-  }
-
-  function enterApp(type, token, user, email) {
-    const isAdmin = type === 'admin';
-
-    sessionStorage.setItem(
-      isAdmin ? 'dcv_access_token' : 'dcv_member_access_token',
-      token
-    );
-
-    sessionStorage.setItem(
-      isAdmin ? 'dcv_admin_email' : 'dcv_member_email',
-      email || ''
-    );
-
-    if (!isAdmin && user && user.id) {
-      sessionStorage.setItem('dcv_member_id', user.id);
-    }
-
-    document.getElementById('signedInEmail').textContent = email || '';
-    setMemberWelcomeName(
-      (user && user.user_metadata && user.user_metadata.full_name) ||
-      (email ? email.split('@')[0] : '')
-    );
-
-    // Admin Panel hanya terlihat oleh Super Admin.
-    document.querySelectorAll('[data-page="admin"], [data-page="members"], [data-page="membership"]').forEach(element => {
-      element.classList.toggle('member-only-hidden', !isAdmin);
-    });
-
-    document.body.classList.remove('admin-authenticated', 'member-authenticated');
-    document.body.classList.add(isAdmin ? 'admin-authenticated' : 'member-authenticated');
-
-    loginScreen.style.display = 'none';
-    navigate('dashboard');
-
-    if (isAdmin) {
-      if (window.loadAdminMembers) window.loadAdminMembers();
-      if (window.loadActivationMembers) window.loadActivationMembers();
-    }
-  }
-
-  // LOGIN MEMBER
-  document.getElementById('memberLoginForm').addEventListener('submit', async function (event) {
-    event.preventDefault();
-
-    const button = document.getElementById('memberLoginButton');
-    button.disabled = true;
-    button.textContent = 'Memeriksa akun...';
-
+  async function loadAdminMembers() {
+    const message = document.getElementById('adminMembersMessage');
+    const body = document.querySelector('#adminMembersTable tbody');
+    if (!message || !body) return;
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token) { message.textContent = 'Sesi Super Admin tidak ditemukan. Silakan login kembali.'; return; }
+    message.textContent = 'Mengambil data member dari Supabase...';
+    body.replaceChildren();
+    const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
     try {
-      const result = await supabaseRequest('/auth/v1/token?grant_type=password', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: document.getElementById('memberLoginEmail').value.trim(),
-          password: document.getElementById('memberLoginPassword').value
-        })
+      const requests = [
+        fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email,created_at&order=created_at.desc', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/member_memberships?select=member_id,membership_type,premium_expires_at', { headers })
+      ];
+      const responses = await Promise.all(requests);
+      const payloads = await Promise.all(responses.map(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || data.error || 'Permintaan database gagal (' + response.status + ').');
+        return data;
+      }));
+      const memberships = new Map((payloads[1] || []).map(item => [item.member_id, item]));
+      const rows = payloads[0] || [];
+      rows.forEach(member => {
+        const membership = memberships.get(member.id);
+        const isPremiumActive = membership && membership.membership_type === 'premium' && membership.premium_expires_at && new Date(membership.premium_expires_at) > new Date();
+        const tr = document.createElement('tr');
+        const values = [member.full_name || '—', member.email || '—', isPremiumActive ? 'Premium Aktif' : 'Gratis / Kedaluwarsa', membership && membership.premium_expires_at ? new Date(membership.premium_expires_at).toLocaleDateString('id-ID') : '—', member.created_at ? new Date(member.created_at).toLocaleDateString('id-ID') : '—'];
+        values.forEach(value => { const td = document.createElement('td'); td.textContent = value; tr.appendChild(td); });
+        tr.dataset.search = values.slice(0, 2).join(' ').toLowerCase();
+        body.appendChild(tr);
       });
-
-      // Jika ada referral tertunda, selesaikan setelah login berhasil.
-      const pendingReferral = localStorage.getItem('dcv_pending_referral');
-
-      if (pendingReferral) {
-        await supabaseRequest('/rest/v1/rpc/complete_referral_registration', {
-          method: 'POST',
-          headers: { Authorization: 'Bearer ' + result.access_token },
-          body: JSON.stringify({
-            p_referral_code: pendingReferral
-          })
-        });
-
-        localStorage.removeItem('dcv_pending_referral');
-      }
-
-      enterApp('member', result.access_token, result.user, result.user.email);
-      showToast('Login member berhasil.');
-
+      message.textContent = 'Berhasil memuat ' + rows.length + ' profil member.';
+      filterAdminMembers();
     } catch (error) {
-      showMessage('memberLoginMessage', 'Login gagal: ' + error.message);
+      message.textContent = 'Gagal memuat data: ' + (error.message || 'Periksa koneksi dan kebijakan RLS Supabase.');
+    }
+  }
+
+  async function loadActivationMembers() {
+    const select = document.getElementById('premiumMemberSelect');
+    if (!select) return;
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token) return;
+    select.innerHTML = '<option value="">Memuat daftar member...</option>';
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email&order=full_name.asc', { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token } });
+      const rows = await response.json();
+      if (!response.ok) throw new Error(rows.message || 'Gagal mengambil daftar member.');
+      select.innerHTML = '<option value="">-- Pilih member --</option>';
+      rows.forEach(member => {
+        const option = document.createElement('option');
+        option.value = member.id;
+        option.textContent = (member.full_name || 'Tanpa nama') + ' — ' + (member.email || member.id);
+        select.appendChild(option);
+      });
+      if (!rows.length) select.innerHTML = '<option value="">Belum ada member</option>';
+    } catch (error) {
+      select.innerHTML = '<option value="">Gagal memuat member</option>';
+      document.getElementById('premiumActivationMessage').textContent = error.message;
+    }
+  }
+
+  document.getElementById('premiumActivationForm').addEventListener('submit', async function (event) {
+    event.preventDefault();
+    const button = document.getElementById('premiumActivationButton');
+    const message = document.getElementById('premiumActivationMessage');
+    const memberId = document.getElementById('premiumMemberSelect').value;
+    const duration = Number(document.getElementById('premiumDuration').value);
+    const amountInput = document.getElementById('premiumAmount').value;
+    if (!memberId || !Number.isInteger(duration) || duration < 1) { message.textContent = 'Pilih member dan isi durasi minimal 1 hari.'; return; }
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token) { message.textContent = 'Sesi berakhir. Silakan login kembali.'; return; }
+    button.disabled = true;
+    button.textContent = 'Memproses aktivasi...';
+    message.textContent = '';
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/rpc/activate_member_premium', {
+        method: 'POST',
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_member_id: memberId, p_duration_days: duration, p_payment_reference: document.getElementById('premiumPaymentReference').value.trim() || null, p_amount: amountInput === '' ? null : Number(amountInput), p_notes: document.getElementById('premiumNotes').value.trim() || null })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || result.error || 'Aktivasi gagal (' + response.status + ').');
+      message.textContent = 'Berhasil! Premium aktif untuk ' + duration + ' hari.';
+      showToast('Aktivasi Premium berhasil.');
+      document.getElementById('premiumPaymentReference').value = '';
+      document.getElementById('premiumAmount').value = '';
+      document.getElementById('premiumNotes').value = '';
+      await loadAdminMembers();
+    } catch (error) {
+      message.textContent = 'Gagal: ' + (error.message || 'Periksa koneksi Supabase.');
     } finally {
       button.disabled = false;
-      button.textContent = 'Masuk ke Dashboard';
+      button.textContent = 'Aktifkan Premium';
     }
   });
 
-  // PENDAFTARAN MEMBER
-  document.getElementById('memberRegisterForm').addEventListener('submit', async function (event) {
+  function filterAdminMembers() {
+    const query = (document.getElementById('adminMemberSearch')?.value || '').trim().toLowerCase();
+    document.querySelectorAll('#adminMembersTable tbody tr').forEach(row => { row.style.display = row.dataset.search.includes(query) ? '' : 'none'; });
+  }
+  window.loadAdminMembers = loadAdminMembers;
+  window.loadActivationMembers = loadActivationMembers;
+  document.querySelector('.admin-sidebar a[href="#activation"]').addEventListener('click', loadActivationMembers);
+  document.getElementById('refreshAdminMembers').addEventListener('click', loadAdminMembers);
+  document.getElementById('adminMemberSearch').addEventListener('input', filterAdminMembers);
+
+  function showLoginError(message) {
+    loginError.textContent = message;
+    loginError.classList.add('show');
+  }
+
+  function showStartupError(message) {
+    showLoginError(message);
+    loginButton.disabled = true;
+    loginButton.textContent = 'Koneksi belum siap';
+  }
+
+  let memberSignupMode = false;
+  const memberForm = document.getElementById('memberAuthForm');
+  const adminForm = document.getElementById('adminLoginForm');
+  const memberSubmitButton = document.getElementById('memberSubmitButton');
+  function showAuthTab(tab) {
+    const isMember = tab === 'member';
+    adminForm.hidden = isMember;
+    memberForm.hidden = !isMember;
+    document.getElementById('showAdminTab').classList.toggle('active', !isMember);
+    document.getElementById('showMemberTab').classList.toggle('active', isMember);
+    loginError.classList.remove('show');
+  }
+  function setMemberSignupMode(enabled) {
+    memberSignupMode = enabled;
+    document.getElementById('memberAuthTitle').textContent = enabled ? 'Daftar Member' : 'Login Member';
+    document.getElementById('memberAuthDescription').textContent = enabled ? 'Buat akun member DIGITALCOREVISION. Gunakan email aktif.' : 'Masuk ke akun DIGITALCOREVISION Anda.';
+    document.getElementById('memberNameField').hidden = !enabled;
+    document.getElementById('memberReferralField').hidden = !enabled;
+    document.getElementById('memberFullName').required = enabled;
+    document.getElementById('memberSubmitButton').textContent = enabled ? 'Buat Akun Member' : 'Login Member';
+    document.getElementById('toggleMemberSignup').textContent = enabled ? 'Sudah punya akun? Login Member' : 'Belum punya akun? Daftar Member';
+    document.getElementById('memberPassword').autocomplete = enabled ? 'new-password' : 'current-password';
+    loginError.classList.remove('show');
+  }
+  document.getElementById('showAdminTab').addEventListener('click', () => showAuthTab('admin'));
+  document.getElementById('showMemberTab').addEventListener('click', () => showAuthTab('member'));
+  document.getElementById('toggleMemberSignup').addEventListener('click', () => setMemberSignupMode(!memberSignupMode));
+  memberForm.addEventListener('submit', async function (event) {
     event.preventDefault();
-
-    const button = document.getElementById('memberRegisterButton');
-    const fullName = document.getElementById('registerFullName').value.trim();
-    const email = document.getElementById('registerEmail').value.trim();
-    const password = document.getElementById('registerPassword').value;
-    const referral = document.getElementById('registerReferral').value.trim().toUpperCase();
-
-    if (password.length < 8) {
-      showMessage('memberRegisterMessage', 'Password minimal 8 karakter.');
-      return;
-    }
-
-    if (!referral) {
-      showMessage('memberRegisterMessage', 'Kode referral wajib diisi.');
-      return;
-    }
-
-    button.disabled = true;
-    button.textContent = 'Mendaftarkan akun...';
-
+    memberSubmitButton.disabled = true;
+    memberSubmitButton.textContent = memberSignupMode ? 'Membuat akun...' : 'Memeriksa akun...';
+    loginError.classList.remove('show');
+    const email = document.getElementById('memberEmail').value.trim();
+    const password = document.getElementById('memberPassword').value;
     try {
-      const result = await supabaseRequest('/auth/v1/signup', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: email,
-          password: password,
-          data: {
-            full_name: fullName
-          }
-        })
-      });
-
-      // Simpan referral sampai email dikonfirmasi dan member login.
-      localStorage.setItem('dcv_pending_referral', referral);
-
-      if (result.access_token && result.user) {
-        try {
-          await supabaseRequest('/rest/v1/rpc/complete_referral_registration', {
-            method: 'POST',
-            headers: { Authorization: 'Bearer ' + result.access_token },
-            body: JSON.stringify({ p_referral_code: referral })
-          });
-
-          localStorage.removeItem('dcv_pending_referral');
-          enterApp('member', result.access_token, result.user, result.user.email);
-          showToast('Pendaftaran berhasil.');
-
-        } catch (referralError) {
-          showMessage(
-            'memberRegisterMessage',
-            'Akun berhasil dibuat, tetapi referral belum selesai: ' +
-            referralError.message +
-            '. Silakan login kembali untuk mencoba.'
-          );
+      if (memberSignupMode) {
+        const response = await fetch(SUPABASE_URL + '/auth/v1/signup', {
+          method: 'POST',
+          headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, data: { full_name: document.getElementById('memberFullName').value.trim(), referral_code: document.getElementById('memberReferral').value.trim() || null } })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.msg || result.message || result.error_description || 'Pendaftaran gagal (' + response.status + ').');
+        if (!result.access_token) {
+          showLoginError('Pendaftaran berhasil. Silakan cek email untuk konfirmasi, lalu login sebagai Member.');
+          setMemberSignupMode(false);
+        } else {
+          enterMemberApp(result.access_token, email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
         }
       } else {
-        showMessage(
-          'memberRegisterMessage',
-          'Pendaftaran berhasil. Silakan cek email untuk konfirmasi akun. Setelah itu, login menggunakan email dan password yang didaftarkan.',
-          true
-        );
+        const response = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+          method: 'POST',
+          headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.msg || result.message || result.error_description || 'Login gagal (' + response.status + ').');
+        enterMemberApp(result.access_token, email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
       }
-
     } catch (error) {
-      showMessage('memberRegisterMessage', 'Pendaftaran gagal: ' + error.message);
+      showLoginError('Tidak bisa memproses akun: ' + (error.message || 'periksa koneksi Supabase.'));
     } finally {
-      button.disabled = false;
-      button.textContent = 'Daftar Sekarang';
+      memberSubmitButton.disabled = false;
+      memberSubmitButton.textContent = memberSignupMode ? 'Buat Akun Member' : 'Login Member';
     }
   });
+  function enterMemberApp(token, email, fullName) {
+    sessionStorage.setItem('dcv_access_token', token);
+    sessionStorage.setItem('dcv_member_email', email || 'Member');
+    document.getElementById('signedInEmail').textContent = email || 'Member';
+    setMemberWelcomeName(fullName || (email ? email.split('@')[0] : ''));
+    loginError.classList.remove('show');
+    loginScreen.style.display = 'none';
+    document.body.classList.remove('admin-authenticated');
+    document.body.classList.add('member-authenticated');
+    navigate('dashboard');
+  }
 
-  // VERIFIKASI SUPER ADMIN
   async function verifyToken(token, email, fullName) {
-    const result = await supabaseRequest('/rest/v1/rpc/is_super_admin', {
+    const response = await fetch(SUPABASE_URL + '/rest/v1/rpc/is_super_admin', {
       method: 'POST',
-      headers: { Authorization: 'Bearer ' + token },
+      headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
       body: '{}'
     });
-
-    if (result !== true) {
-      throw new Error('Akun ini belum terdaftar sebagai Super Admin.');
-    }
-
-    enterApp('admin', token, {
-      user_metadata: { full_name: fullName }
-    }, email);
+    const result = await response.text();
+    if (!response.ok) throw new Error('Verifikasi Super Admin gagal (' + response.status + '): ' + result);
+    if (result !== 'true') throw new Error('Akun ini belum terdaftar sebagai Super Admin.');
+    sessionStorage.setItem('dcv_access_token', token);
+    sessionStorage.setItem('dcv_admin_email', email || 'Super Admin');
+    document.getElementById('signedInEmail').textContent = email || 'Super Admin';
+    setMemberWelcomeName(fullName || (email ? email.split('@')[0] : ''));
+    loginError.classList.remove('show');
+    loginScreen.style.display = 'none';
+    document.body.classList.remove('member-authenticated');
+    document.body.classList.add('admin-authenticated');
   }
 
   loginForm.addEventListener('submit', async function (event) {
     event.preventDefault();
-
     loginError.classList.remove('show');
     loginButton.disabled = true;
     loginButton.textContent = 'Memeriksa akun...';
-
     try {
-      const result = await supabaseRequest('/auth/v1/token?grant_type=password', {
+      const response = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
         method: 'POST',
-        body: JSON.stringify({
-          email: document.getElementById('adminLoginEmail').value.trim(),
-          password: document.getElementById('adminLoginPassword').value
-        })
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: document.getElementById('adminLoginEmail').value.trim(), password: document.getElementById('adminLoginPassword').value })
       });
-
-      await verifyToken(
-        result.access_token,
-        result.user && result.user.email,
-        result.user && result.user.user_metadata && result.user.user_metadata.full_name
-      );
-
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.msg || result.message || result.error_description || 'Login ditolak (' + response.status + ').');
+      await verifyToken(result.access_token, result.user && result.user.email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
     } catch (error) {
-      loginError.textContent = 'Tidak bisa masuk: ' + error.message;
-      loginError.classList.add('show');
+      showLoginError('Tidak bisa masuk: ' + (error.message || 'periksa koneksi internet dan konfigurasi Supabase.'));
     } finally {
       loginButton.disabled = false;
       loginButton.textContent = 'Masuk ke Admin Panel';
     }
   });
 
-  // LOGOUT MEMBER DAN ADMIN
   document.getElementById('adminLogoutButton').addEventListener('click', function () {
-    [
-      'dcv_access_token',
-      'dcv_admin_email',
-      'dcv_member_access_token',
-      'dcv_member_email',
-      'dcv_member_id'
-    ].forEach(key => sessionStorage.removeItem(key));
-
-    document.body.classList.remove('admin-authenticated', 'member-authenticated');
-    document.querySelectorAll('.member-only-hidden').forEach(element => {
-      element.classList.remove('member-only-hidden');
-    });
-
+    sessionStorage.removeItem('dcv_access_token');
+    sessionStorage.removeItem('dcv_admin_email');
+    sessionStorage.removeItem('dcv_member_email');
+    document.body.classList.remove('admin-authenticated');
+    document.body.classList.remove('member-authenticated');
     loginScreen.style.display = 'grid';
     loginForm.reset();
-    document.getElementById('memberLoginForm').reset();
-    switchAuthTab('memberLogin');
   });
 
-  // PEMULIHAN SESI TAB
-  const savedAdminToken = sessionStorage.getItem('dcv_access_token');
-  const savedMemberToken = sessionStorage.getItem('dcv_member_access_token');
-
-  if (savedAdminToken) {
-    verifyToken(
-      savedAdminToken,
-      sessionStorage.getItem('dcv_admin_email')
-    ).catch(error => {
-      sessionStorage.removeItem('dcv_access_token');
-      sessionStorage.removeItem('dcv_admin_email');
-      loginError.textContent = 'Sesi Super Admin berakhir: ' + error.message;
-      loginError.classList.add('show');
-    });
-  } else if (savedMemberToken) {
-    const email = sessionStorage.getItem('dcv_member_email');
-    const memberId = sessionStorage.getItem('dcv_member_id');
-
-    enterApp('member', savedMemberToken, {
-      id: memberId,
-      user_metadata: {}
-    }, email);
-  }
+  loginError.textContent = 'Form login siap. Silakan masuk dengan akun Super Admin.';
+  const savedToken = sessionStorage.getItem('dcv_access_token');
+  if (savedToken && sessionStorage.getItem('dcv_member_email')) {
+    enterMemberApp(savedToken, sessionStorage.getItem('dcv_member_email'));
+  } else if (savedToken) verifyToken(savedToken, sessionStorage.getItem('dcv_admin_email')).catch(function (error) {
+    sessionStorage.removeItem('dcv_access_token');
+    showLoginError('Sesi sebelumnya tidak berlaku: ' + error.message);
+  });
 })();
 </script>
 </body>
