@@ -517,9 +517,71 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
         const result = await response.json();
         if (!response.ok) throw new Error(result.msg || result.message || result.error_description || 'Pendaftaran gagal (' + response.status + ').');
         if (!result.access_token) {
-          showLoginError('Pendaftaran berhasil. Silakan cek email untuk konfirmasi, lalu login sebagai Member.');
-          setMemberSignupMode(false);
-        } else {
+  document.getElementById('memberEmail').value = email;
+
+  let successPanel = document.getElementById('memberSignupSuccess');
+
+  if (!successPanel) {
+    successPanel = document.createElement('div');
+    successPanel.id = 'memberSignupSuccess';
+    successPanel.style.cssText = `
+      margin-top:15px;
+      padding:18px;
+      border:1px solid #99e2d5;
+      border-radius:12px;
+      background:#ecfdf8;
+      color:#14594f;
+      font-size:13px;
+      line-height:1.7;
+    `;
+    memberSubmitButton.insertAdjacentElement('afterend', successPanel);
+  }
+
+  successPanel.replaceChildren();
+
+  const heading = document.createElement('h3');
+  heading.textContent = 'PENDAFTARAN BERHASIL!';
+  heading.style.cssText = 'color:#08786f;font-size:19px;margin:0 0 8px;';
+
+  const title = document.createElement('strong');
+  title.textContent = 'Silakan Konfirmasi Email Anda';
+
+  const intro = document.createElement('p');
+  intro.textContent = 'Tautan konfirmasi telah dikirim ke alamat email:';
+
+  const emailText = document.createElement('strong');
+  emailText.textContent = email;
+
+  const steps = document.createElement('ol');
+  [
+    'Buka kotak masuk email Anda.',
+    'Cari email konfirmasi dari Supabase.',
+    'Klik tautan konfirmasi di dalam email.',
+    'Kembali ke halaman ini dan login sebagai Member.'
+  ].forEach(text => {
+    const li = document.createElement('li');
+    li.textContent = text;
+    steps.appendChild(li);
+  });
+
+  const note = document.createElement('p');
+  note.textContent = 'Jika email belum ditemukan, periksa folder Spam atau Promosi.';
+
+  const backButton = document.createElement('button');
+  backButton.type = 'button';
+  backButton.textContent = 'Kembali ke Login Member';
+  backButton.className = 'secondary-btn';
+  backButton.style.width = '100%';
+  backButton.onclick = () => {
+    successPanel.remove();
+    setMemberSignupMode(false);
+    showAuthTab('member');
+  };
+
+  successPanel.append(heading, title, intro, emailText, steps, note, backButton);
+} else {
+  enterMemberApp(result.access_token, email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
+} else {
           enterMemberApp(result.access_token, email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
         }
       } else {
