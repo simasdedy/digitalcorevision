@@ -508,7 +508,8 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
     const password = document.getElementById('memberPassword').value;
     try {
       if (memberSignupMode) {
-        const response = await fetch(SUPABASE_URL + '/auth/v1/signup', {
+        const confirmationReturnUrl = 'https://simasdedy.github.io/digitalcorevision/?auth=member';
+        const response = await fetch(SUPABASE_URL + '/auth/v1/signup?redirect_to=' + encodeURIComponent(confirmationReturnUrl), {
           method: 'POST',
           headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password, data: { full_name: document.getElementById('memberFullName').value.trim(), referral_code: document.getElementById('memberReferral').value.trim() || null } })
