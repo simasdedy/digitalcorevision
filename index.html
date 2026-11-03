@@ -581,9 +581,7 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
   successPanel.append(heading, title, intro, emailText, steps, note, backButton);
 } else {
   enterMemberApp(result.access_token, email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
-} else {
-          enterMemberApp(result.access_token, email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
-        }
+
       } else {
         const response = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
           method: 'POST',
