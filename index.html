@@ -524,6 +524,7 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
   if (!successPanel) {
     successPanel = document.createElement('div');
     successPanel.id = 'memberSignupSuccess';
+    successPanel.className = 'signup-success';
     successPanel.style.cssText = `
       margin-top:15px;
       padding:18px;
