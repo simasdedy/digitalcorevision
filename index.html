@@ -368,9 +368,10 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
     const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
     try {
       const requests = [
-        fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email,created_at&order=created_at.desc', { headers }),
-        fetch(SUPABASE_URL + '/rest/v1/member_memberships?select=member_id,membership_type,premium_expires_at', { headers })
-      ];
+  fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email,created_at&order=created_at.desc', { headers }),
+  fetch(SUPABASE_URL + '/rest/v1/member_memberships?select=member_id,membership_type,premium_expires_at', { headers }),
+  fetch(SUPABASE_URL + '/rest/v1/super_admins?select=user_id', { headers })
+];
       const responses = await Promise.all(requests);
       const payloads = await Promise.all(responses.map(async response => {
         const data = await response.json();
@@ -378,7 +379,8 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
         return data;
       }));
       const memberships = new Map((payloads[1] || []).map(item => [item.member_id, item]));
-      const rows = payloads[0] || [];
+      const adminIds = new Set((payloads[2] || []).map(admin => admin.user_id));
+const rows = (payloads[0] || []).filter(member => !adminIds.has(member.id));
       rows.forEach(member => {
         const membership = memberships.get(member.id);
         const isPremiumActive = membership && membership.membership_type === 'premium' && membership.premium_expires_at && new Date(membership.premium_expires_at) > new Date();
