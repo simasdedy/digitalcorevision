@@ -404,9 +404,26 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
     try {
       const response = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email&order=full_name.asc', { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token } });
       const rows = await response.json();
-      if (!response.ok) throw new Error(rows.message || 'Gagal mengambil daftar member.');
-      select.innerHTML = '<option value="">-- Pilih member --</option>';
-      rows.forEach(member => {
+if (!response.ok) throw new Error(rows.message || 'Gagal mengambil daftar member.');
+
+const adminResponse = await fetch(
+  SUPABASE_URL + '/rest/v1/super_admins?select=user_id',
+  {
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: 'Bearer ' + token
+    }
+  }
+);
+
+const admins = await adminResponse.json();
+if (!adminResponse.ok) throw new Error('Gagal memeriksa akun Super Admin.');
+
+const adminIds = new Set(admins.map(admin => admin.user_id));
+const memberRows = rows.filter(member => !adminIds.has(member.id));
+
+select.innerHTML = '<option value="">-- Pilih member --</option>';
+memberRows.forEach(member => {
         const option = document.createElement('option');
         option.value = member.id;
         option.textContent = (member.full_name || 'Tanpa nama') + ' — ' + (member.email || member.id);
