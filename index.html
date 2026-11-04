@@ -486,7 +486,11 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
     document.getElementById('showAdminTab').classList.toggle('active', !isMember);
     document.getElementById('showMemberTab').classList.toggle('active', isMember);
     loginError.classList.remove('show');
-  }
+
+    if (isMember) {
+        setMemberSignupMode(false);
+    }
+}
   function setMemberSignupMode(enabled) {
     memberSignupMode = enabled;
     document.getElementById('memberAuthTitle').textContent = enabled ? 'Daftar Member' : 'Login Member';
