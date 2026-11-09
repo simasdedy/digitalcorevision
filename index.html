@@ -242,7 +242,42 @@ main { max-width:1200px; padding:42px 16px 50px; }
       </section>
       <section class="page" id="profile">
         <div class="page-head"><div><h1>Profil & Pengaturan</h1><div class="subtitle">Informasi administrator dan konfigurasi dasar platform.</div></div></div>
-        <div class="content-grid"><div class="card"><div class="section-title">Profil Administrator</div><div class="form-row"><div class="field"><label>Nama</label><input value="Administrator" id="adminName"></div><div class="field"><label>Email</label><input value="admin@digitalcorevision.com" type="email"></div></div><div class="field"><label>Nama Platform</label><input value="DIGITALCOREVISION 2.0"></div><button class="primary-btn" onclick="showToast('Perubahan profil hanya simulasi preview.')">Simpan Perubahan</button></div><div class="card"><div class="section-title">Konfigurasi Sistem</div><div class="plan"><div><strong>Autentikasi</strong><small>Login email dan password</small></div><span class="status pending">Integrasi berikutnya</span></div><div class="plan"><div><strong>Database</strong><small>Supabase PostgreSQL</small></div><span class="status pending">Belum terhubung</span></div><div class="plan"><div><strong>Multi-organisasi</strong><small>Pemisahan data pelanggan</small></div><span class="status">Rancangan</span></div><div class="plan"><div><strong>Backup</strong><small>Prosedur pencadangan data</small></div><span class="status pending">Belum disiapkan</span></div></div></div>
+        <div class="content-grid">
+  <div class="card">
+    <div class="section-title">Profil Akun</div>
+    <div class="field">
+      <label for="profileName">Nama lengkap</label>
+      <input id="profileName" type="text" placeholder="Nama lengkap Anda">
+    </div>
+    <div class="field">
+      <label for="profileEmail">Email akun</label>
+      <input id="profileEmail" type="email" readonly>
+    </div>
+    <p class="section-sub">Email mengikuti akun login dan tidak dapat diubah di sini.</p>
+    <button class="primary-btn" id="saveProfileButton" type="button">Simpan Profil</button>
+    <div id="profileMessage" class="section-sub" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card" id="systemSettingsCard" hidden>
+    <div class="section-title">Konfigurasi Sistem · Super Admin</div>
+    <div class="plan">
+      <div><strong>Autentikasi</strong><small>Login email dan password melalui Supabase Auth</small></div>
+      <span class="status">Terintegrasi</span>
+    </div>
+    <div class="plan">
+      <div><strong>Database</strong><small>Supabase PostgreSQL</small></div>
+      <span class="status">Terhubung</span>
+    </div>
+    <div class="plan">
+      <div><strong>Multi-organisasi</strong><small>Pemisahan data berdasarkan organisasi</small></div>
+      <span class="status pending">Perlu konfigurasi lanjutan</span>
+    </div>
+    <div class="plan">
+      <div><strong>Backup</strong><small>Pencadangan dan pemulihan data</small></div>
+      <span class="status pending">Atur di Supabase</span>
+    </div>
+  </div>
+</div>
       </section>
       <section class="page" id="training"><div class="page-head"><div><h1>Training</h1><div class="subtitle">Materi training untuk pengembangan bisnis network.</div></div></div><div class="card"><div class="section-title">Program Training</div><p class="section-sub">Materi akan ditampilkan setelah modul training dihubungkan.</p></div></section>
       <section class="page" id="leads"><div class="page-head"><div><h1>Data Leads</h1><div class="subtitle">Kelola data prospek dan tindak lanjut.</div></div></div><div class="notice">Fitur Data Leads akan tersedia sesuai hak akses membership.</div></section>
