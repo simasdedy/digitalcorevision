@@ -671,6 +671,7 @@ successPanel.classList.add('show');
     loginScreen.style.display = 'none';
     document.body.classList.remove('admin-authenticated');
     document.body.classList.add('member-authenticated');
+    document.getElementById('systemSettingsCard').hidden = true;
     navigate('dashboard');
   }
 
