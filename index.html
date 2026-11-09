@@ -670,6 +670,7 @@ successPanel.classList.add('show');
     loginError.classList.remove('show');
     loginScreen.style.display = 'none';
     document.body.classList.remove('admin-authenticated');
+    document.getElementById('systemSettingsCard').hidden = false;
     document.body.classList.add('member-authenticated');
     document.getElementById('systemSettingsCard').hidden = true;
     navigate('dashboard');
