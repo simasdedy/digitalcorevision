@@ -923,7 +923,6 @@ async function loadAffiliateCenter() {
     sessionStorage.removeItem('dcv_access_token');
     showLoginError('Sesi sebelumnya tidak berlaku: ' + error.message);
   });
-})();
 // Memproses token setelah konfirmasi email Supabase
 (async function handleEmailConfirmation() {
   const hashParams = new URLSearchParams(
@@ -998,6 +997,7 @@ async function loadAffiliateCenter() {
     alert('Pendaftaran referral belum berhasil: ' + error.message);
   }
 })();
+
 </script>
 </body>
 </html>
