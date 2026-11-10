@@ -194,7 +194,13 @@ main { max-width:1200px; padding:42px 16px 50px; }
       <div id="memberNameField" class="field" hidden><label for="memberFullName">Nama lengkap</label><input id="memberFullName" type="text" autocomplete="name" placeholder="Nama lengkap"></div>
       <div class="field"><label for="memberEmail">Email</label><input id="memberEmail" type="email" autocomplete="email" placeholder="Email aktif" required></div>
       <div class="field"><label for="memberPassword">Password</label><input id="memberPassword" type="password" autocomplete="current-password" minlength="6" placeholder="Minimal 6 karakter" required></div>
-      <div id="memberReferralField" class="field" hidden><label for="memberReferral">Kode Referral Sponsor *</label><input id="memberReferral" type="text" placeholder="Kode referral sponsor"></div>
+      
+<div id="memberReferralField" class="field" hidden>
+  <label for="memberReferral">Kode Referral Sponsor *</label>
+  <input id="memberReferral" type="text" placeholder="Kode referral sponsor" readonly>
+  <small>Kode referral ditentukan oleh link undangan sponsor dan tidak dapat diubah.</small>
+</div>
+
       <button class="primary-btn" id="memberSubmitButton" type="submit" style="width:100%;padding:13px">Login Member</button>
       <button type="button" id="toggleMemberSignup" class="secondary-btn" style="width:100%;margin-top:9px">Belum punya akun? Daftar Member</button>
     </form>
