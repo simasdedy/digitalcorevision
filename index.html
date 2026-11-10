@@ -249,6 +249,21 @@ main { max-width:1200px; padding:42px 16px 50px; }
             <div><h3 style="font-size:14px">Jadwal besok</h3><div id="dashFollowTomorrowList" class="section-sub">Memuat...</div></div>
           </div>
         </div>
+        <div class="card" id="prospectTrackerCard" style="margin-top:20px">
+          <div class="page-head"><div><h2 style="margin:0">Prospect Tracker & Statistik Konversi</h2><div class="subtitle">Pantau perkembangan prospek dan hasil closing Anda.</div></div><button class="secondary-btn" type="button" onclick="navigate('leads')">Kelola Prospek</button></div>
+          <div class="cards" style="margin:14px 0">
+            <div class="card"><div class="metric-label">Total Prospek</div><div class="metric-value" id="trackerTotal">—</div></div>
+            <div class="card"><div class="metric-label">Prospek Baru</div><div class="metric-value" id="trackerNew">—</div></div>
+            <div class="card"><div class="metric-label">Tertarik</div><div class="metric-value" id="trackerInterested">—</div></div>
+            <div class="card"><div class="metric-label">Berhasil Closing</div><div class="metric-value" id="trackerClosing">—</div></div>
+            <div class="card"><div class="metric-label">Konversi Closing</div><div class="metric-value" id="trackerConversion">—</div></div>
+          </div>
+          <div class="section-title" style="margin-top:18px">Perkembangan Prospek · 6 Bulan Terakhir</div>
+          <div id="trackerMonthlyChart" style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;align-items:end;min-height:170px;margin-top:14px">
+            <div class="section-sub">Memuat statistik...</div>
+          </div>
+          <div class="section-sub" id="trackerMonthlyNote" style="margin-top:10px">Grafik berdasarkan tanggal prospek dibuat.</div>
+        </div>
       </section>
       <section class="page" id="members">
         <div class="page-head"><div><h1>Manajemen Member</h1><div class="subtitle">Kelola akun, organisasi, dan status akses member.</div></div><button class="primary-btn" onclick="openModal()">＋ Tambah Member</button></div>
@@ -1161,7 +1176,7 @@ async function loadAffiliateCenter() {
   }
 
   async function loadDashboardFollowUps() {
-    const ids = ['dashFollowOverdue','dashFollowToday','dashFollowTomorrow','dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList'];
+    const ids = ['dashFollowOverdue','dashFollowToday','dashFollowTomorrow','dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList','trackerTotal','trackerNew','trackerInterested','trackerClosing','trackerConversion','trackerMonthlyChart','trackerMonthlyNote'];
     const nodes = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     const token = sessionStorage.getItem('dcv_access_token');
     if (!token) {
@@ -1169,15 +1184,59 @@ async function loadAffiliateCenter() {
       return;
     }
     try {
-      const response = await fetch(SUPABASE_URL + '/rest/v1/leads?select=id,full_name,phone,status,follow_up_at&follow_up_at=not.is.null&order=follow_up_at.asc', {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/leads?select=id,full_name,phone,status,follow_up_at,created_at&order=created_at.desc', {
         headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token }
       });
       const leads = await response.json();
       if (!response.ok) throw new Error(leads.message || 'Gagal memuat pengingat follow-up.');
+      const total = leads.length;
+      const newCount = leads.filter(item => item.status === 'baru').length;
+      const interestedCount = leads.filter(item => item.status === 'tertarik').length;
+      const closingCount = leads.filter(item => item.status === 'closing').length;
+      nodes.trackerTotal.textContent = total;
+      nodes.trackerNew.textContent = newCount;
+      nodes.trackerInterested.textContent = interestedCount;
+      nodes.trackerClosing.textContent = closingCount;
+      nodes.trackerConversion.textContent = total ? ((closingCount / total) * 100).toFixed(1).replace('.', ',') + '%' : '0%';
+
+      const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      const monthBuckets = [];
+      const chartNow = new Date();
+      for (let offset = 5; offset >= 0; offset--) {
+        const monthDate = new Date(chartNow.getFullYear(), chartNow.getMonth() - offset, 1);
+        monthBuckets.push({ year: monthDate.getFullYear(), month: monthDate.getMonth(), label: monthNames[monthDate.getMonth()], count: 0 });
+      }
+      leads.forEach(item => {
+        if (!item.created_at) return;
+        const created = new Date(item.created_at);
+        const bucket = monthBuckets.find(month => month.year === created.getFullYear() && month.month === created.getMonth());
+        if (bucket) bucket.count++;
+      });
+      const chart = nodes.trackerMonthlyChart;
+      chart.replaceChildren();
+      const maxMonthly = Math.max(1, ...monthBuckets.map(bucket => bucket.count));
+      monthBuckets.forEach(bucket => {
+        const column = document.createElement('div');
+        column.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:160px;gap:6px;min-width:0';
+        const countLabel = document.createElement('strong');
+        countLabel.textContent = bucket.count;
+        countLabel.style.fontSize = '12px';
+        const bar = document.createElement('div');
+        bar.style.cssText = 'width:min(34px,70%);height:' + Math.max(5, (bucket.count / maxMonthly) * 105) + 'px;background:linear-gradient(180deg,#20b8b2,#123b67);border-radius:6px 6px 0 0';
+        bar.title = bucket.count + ' prospek';
+        const monthLabel = document.createElement('span');
+        monthLabel.textContent = bucket.label;
+        monthLabel.style.cssText = 'font-size:11px;color:#64748b';
+        column.append(countLabel, bar, monthLabel);
+        chart.appendChild(column);
+      });
+      nodes.trackerMonthlyNote.textContent = 'Total prospek baru dalam 6 bulan terakhir: ' + monthBuckets.reduce((sum, bucket) => sum + bucket.count, 0) + '. Grafik berdasarkan tanggal prospek dibuat.';
+
       const startToday = new Date(); startToday.setHours(0,0,0,0);
       const startTomorrow = new Date(startToday); startTomorrow.setDate(startTomorrow.getDate()+1);
       const startAfterTomorrow = new Date(startTomorrow); startAfterTomorrow.setDate(startAfterTomorrow.getDate()+1);
-      const openLeads = leads.filter(item => item.status !== 'closing' && item.status !== 'tidak_tertarik');
+      const scheduledLeads = leads.filter(item => item.follow_up_at);
+      const openLeads = scheduledLeads.filter(item => item.status !== 'closing' && item.status !== 'tidak_tertarik');
       const now = new Date();
       const overdue = openLeads.filter(item => new Date(item.follow_up_at) < now);
       const today = openLeads.filter(item => new Date(item.follow_up_at) >= now && new Date(item.follow_up_at) < startTomorrow);
