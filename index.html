@@ -634,7 +634,9 @@ if (incomingReferralCode) {
         const response = await fetch(SUPABASE_URL + '/auth/v1/signup?redirect_to=' + encodeURIComponent(confirmationReturnUrl), {
           method: 'POST',
           headers: { apikey: SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password, data: { full_name: document.getElementById('memberFullName').value.trim(), referral_code: document.getElementById('memberReferral').value.trim() || null } })
+          body: JSON.stringify({ email, password, data: { full_name: document.getElementById('memberFullName').value.trim(),
+  phone: document.getElementById('memberPhone').value.trim(),
+  referral_code: document.getElementById('memberReferral').value.trim() || null } })
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.msg || result.message || result.error_description || 'Pendaftaran gagal (' + response.status + ').');
