@@ -351,6 +351,11 @@ main { max-width:1200px; padding:42px 16px 50px; }
             <div id="leadSummary" class="section-sub">Memuat ringkasan...</div>
           </div>
           <div class="card" style="grid-column:1/-1">
+            <div class="section-title">Pipeline Prospek</div>
+            <div class="section-sub" style="margin-bottom:12px">Pantau posisi setiap prospek dan ubah tahapnya langsung dari papan pipeline.</div>
+            <div id="leadsPipeline" style="display:grid;grid-template-columns:repeat(3,minmax(210px,1fr));gap:12px;overflow-x:auto">Memuat pipeline...</div>
+          </div>
+          <div class="card" style="grid-column:1/-1">
             <div class="section-title">Daftar Prospek Saya</div>
             <div id="leadList" class="section-sub">Memuat data leads...</div>
           </div>
@@ -1028,6 +1033,67 @@ async function loadAffiliateCenter() {
         }
       });
       summaryBox.textContent = 'Total: ' + leads.length + ' | Baru: ' + counts.baru + ' | Follow Up: ' + counts.follow_up + ' | Closing: ' + counts.closing + ' | Terlambat: ' + overdueCount + ' | Hari ini: ' + todayCount;
+
+      const pipelineBox = document.getElementById('leadsPipeline');
+      if (pipelineBox) {
+        const stages = [
+          { value: 'baru', label: 'Baru' },
+          { value: 'dihubungi', label: 'Sudah Dihubungi' },
+          { value: 'follow_up', label: 'Follow-Up' },
+          { value: 'tertarik', label: 'Tertarik' },
+          { value: 'closing', label: 'Closing' },
+          { value: 'tidak_tertarik', label: 'Tidak Tertarik' }
+        ];
+        pipelineBox.replaceChildren();
+        stages.forEach(stage => {
+          const stageLeads = leads.filter(item => item.status === stage.value);
+          const column = document.createElement('div');
+          column.style.cssText = 'background:#f7f9fc;border:1px solid #e1e8f0;border-radius:12px;padding:12px;min-width:0';
+          const heading = document.createElement('div');
+          heading.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;font-weight:700;font-size:13px';
+          const stageName = document.createElement('span'); stageName.textContent = stage.label;
+          const countBadge = document.createElement('span'); countBadge.textContent = stageLeads.length;
+          countBadge.style.cssText = 'background:#e5edf6;border-radius:20px;padding:3px 8px;font-size:12px';
+          heading.append(stageName, countBadge); column.appendChild(heading);
+          if (!stageLeads.length) {
+            const empty = document.createElement('div'); empty.textContent = 'Belum ada prospek'; empty.style.cssText = 'font-size:12px;color:#94a3b8;padding:8px 0';
+            column.appendChild(empty);
+          }
+          stageLeads.forEach(item => {
+            const card = document.createElement('div');
+            card.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:10px;margin-bottom:9px';
+            const name = document.createElement('strong'); name.textContent = item.full_name || 'Tanpa nama'; name.style.cssText = 'display:block;font-size:13px;margin-bottom:4px';
+            const contact = document.createElement('div'); contact.textContent = item.phone || item.email || 'Kontak belum diisi'; contact.style.cssText = 'font-size:11px;color:#64748b;margin-bottom:9px;overflow-wrap:anywhere';
+            const stageSelect = document.createElement('select');
+            stageSelect.style.cssText = 'width:100%;padding:7px;border:1px solid #dbe5ef;border-radius:7px;font-size:11px;margin-bottom:7px';
+            stages.forEach(option => { const el = document.createElement('option'); el.value = option.value; el.textContent = option.label; el.selected = option.value === item.status; stageSelect.appendChild(el); });
+            const updateButton = document.createElement('button'); updateButton.type = 'button'; updateButton.className = 'secondary-btn'; updateButton.textContent = 'Pindahkan Tahap'; updateButton.style.cssText = 'width:100%;font-size:11px;padding:7px';
+            updateButton.addEventListener('click', async () => {
+              if (stageSelect.value === item.status) { updateButton.textContent = 'Tidak ada perubahan'; return; }
+              const accessToken = sessionStorage.getItem('dcv_access_token');
+              if (!accessToken) { alert('Sesi berakhir. Silakan login kembali.'); return; }
+              updateButton.disabled = true; updateButton.textContent = 'Menyimpan...';
+              try {
+                const updateResponse = await fetch(SUPABASE_URL + '/rest/v1/leads?id=eq.' + encodeURIComponent(item.id), {
+                  method: 'PATCH',
+                  headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+                  body: JSON.stringify({ status: stageSelect.value })
+                });
+                if (!updateResponse.ok) {
+                  const updateError = await updateResponse.json();
+                  throw new Error(updateError.message || updateError.details || 'Gagal memperbarui tahap prospek.');
+                }
+                await loadLeads();
+              } catch (error) {
+                alert(error.message || 'Gagal memperbarui tahap prospek.');
+                updateButton.disabled = false; updateButton.textContent = 'Pindahkan Tahap';
+              }
+            });
+            card.append(name, contact, stageSelect, updateButton); column.appendChild(card);
+          });
+          pipelineBox.appendChild(column);
+        });
+      }
       if (!leads.length) {
         listBox.textContent = 'Belum ada prospek. Tambahkan prospek pertama melalui formulir di atas.';
         return;
