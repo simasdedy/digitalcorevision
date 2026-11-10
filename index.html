@@ -708,6 +708,7 @@ successPanel.classList.add('show');
   const referralCode = result.user && result.user.user_metadata
   ? result.user.user_metadata.referral_code
   : null;
+          console.log('DATA REFERRAL SAAT LOGIN:', result.user.user_metadata);
 
 if (referralCode) {
   const referralResponse = await fetch(
