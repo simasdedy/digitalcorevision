@@ -743,6 +743,92 @@ enterMemberApp(
     navigate('dashboard');
   }
 
+  
+async function loadAffiliateCenter() {
+  const codeBox = document.getElementById('affiliateReferralCode');
+  const linkBox = document.getElementById('affiliateReferralLink');
+  const statsBox = document.getElementById('affiliateReferralStats');
+
+  const token = sessionStorage.getItem('dcv_access_token');
+
+  if (!token) {
+    codeBox.textContent = 'Silakan login kembali.';
+    return;
+  }
+
+  const headers = {
+    apikey: SUPABASE_PUBLISHABLE_KEY,
+    Authorization: 'Bearer ' + token
+  };
+
+  try {
+    // Ambil identitas member yang sedang login
+    const userResponse = await fetch(
+      SUPABASE_URL + '/auth/v1/user',
+      { headers }
+    );
+
+    const user = await userResponse.json();
+
+    if (!userResponse.ok) {
+      throw new Error(user.message || 'Gagal membaca akun.');
+    }
+
+    // Ambil kode referral aktif milik member
+    const codeResponse = await fetch(
+      SUPABASE_URL +
+      '/rest/v1/member_referral_codes?select=referral_code,is_active&user_id=eq.' +
+      encodeURIComponent(user.id) +
+      '&is_active=eq.true',
+      { headers }
+    );
+
+    const codes = await codeResponse.json();
+
+    if (!codeResponse.ok) {
+      throw new Error('Gagal mengambil kode referral.');
+    }
+
+    if (!codes.length) {
+      codeBox.textContent = 'Kode referral aktif belum tersedia.';
+      linkBox.textContent = 'Link referral belum tersedia.';
+      statsBox.textContent = 'Belum ada data.';
+      return;
+    }
+
+    const code = codes[0].referral_code;
+    const referralLink =
+      window.location.origin +
+      window.location.pathname +
+      '?ref=' + encodeURIComponent(code);
+
+    codeBox.textContent = code;
+    linkBox.textContent = referralLink;
+
+    // Hitung member yang bergabung melalui referral ini
+    const referralResponse = await fetch(
+      SUPABASE_URL +
+      '/rest/v1/member_referrals?select=member_id&sponsor_id=eq.' +
+      encodeURIComponent(user.id),
+      { headers }
+    );
+
+    const referrals = await referralResponse.json();
+
+    if (!referralResponse.ok) {
+      throw new Error('Gagal mengambil statistik referral.');
+    }
+
+    statsBox.textContent =
+      'Total member dari referral Anda: ' + referrals.length;
+
+  } catch (error) {
+    codeBox.textContent = 'Gagal memuat data.';
+    linkBox.textContent = 'Gagal memuat link referral.';
+    statsBox.textContent = error.message;
+  }
+}
+
   async function verifyToken(token, email, fullName) {
     const response = await fetch(SUPABASE_URL + '/rest/v1/rpc/is_super_admin', {
       method: 'POST',
