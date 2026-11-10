@@ -939,6 +939,17 @@ async function loadAffiliateCenter() {
   }
 }
 
+  let editingLeadId = null;
+
+  function resetLeadFormMode() {
+    editingLeadId = null;
+    document.querySelector('#leadForm .section-title');
+    const title = document.querySelector('#leads .card .section-title');
+    if (title) title.textContent = 'Tambah Prospek';
+    const button = document.getElementById('saveLeadButton');
+    if (button) button.textContent = 'Simpan Prospek';
+  }
+
   async function loadLeads() {
     const listBox = document.getElementById('leadList');
     const summaryBox = document.getElementById('leadSummary');
@@ -966,7 +977,7 @@ async function loadAffiliateCenter() {
       table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;margin-top:10px';
       const head = document.createElement('thead');
       const headRow = document.createElement('tr');
-      ['Nama','WhatsApp','Email','Sumber','Status','Catatan','Tanggal'].forEach(label => {
+      ['Nama','WhatsApp','Email','Sumber','Status','Catatan','Tanggal','Aksi'].forEach(label => {
         const th = document.createElement('th'); th.textContent = label;
         th.style.cssText = 'text-align:left;padding:10px 8px;border-bottom:1px solid #dbe5ef'; headRow.appendChild(th);
       });
@@ -978,6 +989,61 @@ async function loadAffiliateCenter() {
           const td = document.createElement('td'); td.textContent = value || '-';
           td.style.cssText = 'padding:10px 8px;border-bottom:1px solid #edf2f7;vertical-align:top'; row.appendChild(td);
         });
+
+        const actionCell = document.createElement('td');
+        actionCell.style.cssText = 'padding:10px 8px;border-bottom:1px solid #edf2f7;white-space:nowrap';
+        const editButton = document.createElement('button');
+        editButton.type = 'button';
+        editButton.className = 'secondary-btn';
+        editButton.textContent = 'Edit';
+        editButton.style.marginRight = '6px';
+        editButton.addEventListener('click', function () {
+          editingLeadId = item.id;
+          document.getElementById('leadName').value = item.full_name || '';
+          document.getElementById('leadPhone').value = item.phone || '';
+          document.getElementById('leadEmail').value = item.email || '';
+          document.getElementById('leadSource').value = item.source || '';
+          document.getElementById('leadStatus').value = item.status || 'baru';
+          document.getElementById('leadNotes').value = item.notes || '';
+          const title = document.querySelector('#leads .card .section-title');
+          if (title) title.textContent = 'Edit Prospek';
+          const saveButton = document.getElementById('saveLeadButton');
+          saveButton.textContent = 'Simpan Perubahan';
+          document.getElementById('leadMessage').textContent = 'Mode edit: ubah data lalu klik Simpan Perubahan.';
+          document.getElementById('leadName').focus();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'secondary-btn';
+        deleteButton.textContent = 'Hapus';
+        deleteButton.addEventListener('click', async function () {
+          if (!confirm('Hapus prospek ' + (item.full_name || '') + '? Tindakan ini tidak dapat dibatalkan.')) return;
+          const token = sessionStorage.getItem('dcv_access_token');
+          if (!token) { alert('Sesi berakhir. Silakan login kembali.'); return; }
+          deleteButton.disabled = true;
+          try {
+            const response = await fetch(SUPABASE_URL + '/rest/v1/leads?id=eq.' + encodeURIComponent(item.id), {
+              method: 'DELETE',
+              headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token }
+            });
+            if (!response.ok) {
+              const result = await response.json();
+              throw new Error(result.message || result.details || 'Gagal menghapus prospek.');
+            }
+            if (editingLeadId === item.id) {
+              document.getElementById('leadForm').reset();
+              resetLeadFormMode();
+            }
+            document.getElementById('leadMessage').textContent = 'Prospek berhasil dihapus.';
+            await loadLeads();
+          } catch (error) {
+            alert('Gagal menghapus: ' + (error.message || 'Periksa koneksi.'));
+            deleteButton.disabled = false;
+          }
+        });
+        actionCell.append(editButton, deleteButton);
+        row.appendChild(actionCell);
         body.appendChild(row);
       });
       table.appendChild(body); listBox.replaceChildren(table);
@@ -998,29 +1064,36 @@ async function loadAffiliateCenter() {
     if (!fullName) { message.textContent = 'Nama prospek wajib diisi.'; return; }
     button.disabled = true; button.textContent = 'Menyimpan...'; message.textContent = '';
     try {
-      const response = await fetch(SUPABASE_URL + '/rest/v1/leads', {
-        method: 'POST',
+      const leadData = {
+        full_name: fullName,
+        phone: document.getElementById('leadPhone').value.trim() || null,
+        email: document.getElementById('leadEmail').value.trim() || null,
+        source: document.getElementById('leadSource').value.trim() || null,
+        status: document.getElementById('leadStatus').value,
+        notes: document.getElementById('leadNotes').value.trim() || null
+      };
+      const isEditing = Boolean(editingLeadId);
+      const endpoint = isEditing
+        ? SUPABASE_URL + '/rest/v1/leads?id=eq.' + encodeURIComponent(editingLeadId)
+        : SUPABASE_URL + '/rest/v1/leads';
+      const response = await fetch(endpoint, {
+        method: isEditing ? 'PATCH' : 'POST',
         headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-        body: JSON.stringify({
-          full_name: fullName,
-          phone: document.getElementById('leadPhone').value.trim() || null,
-          email: document.getElementById('leadEmail').value.trim() || null,
-          source: document.getElementById('leadSource').value.trim() || null,
-          status: document.getElementById('leadStatus').value,
-          notes: document.getElementById('leadNotes').value.trim() || null
-        })
+        body: JSON.stringify(leadData)
       });
       if (!response.ok) {
         const result = await response.json();
-        throw new Error(result.message || result.details || 'Gagal menyimpan prospek.');
+        throw new Error(result.message || result.details || (isEditing ? 'Gagal memperbarui prospek.' : 'Gagal menyimpan prospek.'));
       }
       this.reset();
-      message.textContent = 'Prospek berhasil disimpan.';
+      resetLeadFormMode();
+      message.textContent = isEditing ? 'Perubahan prospek berhasil disimpan.' : 'Prospek berhasil disimpan.';
       await loadLeads();
     } catch(error) {
       message.textContent = 'Gagal: ' + (error.message || 'Periksa koneksi Supabase.');
     } finally {
-      button.disabled = false; button.textContent = 'Simpan Prospek';
+      button.disabled = false;
+      button.textContent = editingLeadId ? 'Simpan Perubahan' : 'Simpan Prospek';
     }
   });
   document.getElementById('refreshLeadsButton').addEventListener('click', loadLeads);
