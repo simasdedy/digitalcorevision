@@ -673,7 +673,45 @@ memberRows.forEach(member => {
 successPanel.append(heading, title, intro, emailText, steps, note, backButton);
 successPanel.classList.add('show');
   } else {
-  enterMemberApp(result.access_token, email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
+  const referralCode = result.user && result.user.user_metadata
+  ? result.user.user_metadata.referral_code
+  : null;
+
+if (referralCode) {
+  const referralResponse = await fetch(
+    SUPABASE_URL + '/rest/v1/rpc/complete_referral_registration',
+    {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: 'Bearer ' + result.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_referral_code: referralCode
+      })
+    }
+  );
+
+  const referralResult = await referralResponse.json();
+
+  if (
+    !referralResponse.ok &&
+    !(referralResult.message || '').includes('Pendaftaran member sudah pernah diselesaikan.')
+  ) {
+    throw new Error(
+      referralResult.message ||
+      referralResult.error ||
+      'Pendaftaran referral gagal.'
+    );
+  }
+}
+
+enterMemberApp(
+  result.access_token,
+  email,
+  result.user && result.user.user_metadata && result.user.user_metadata.full_name
+);
 }
       } else {
         const response = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
