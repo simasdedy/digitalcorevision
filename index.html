@@ -257,6 +257,11 @@ main { max-width:1200px; padding:42px 16px 50px; }
             <div class="card"><div class="metric-label">Tertarik</div><div class="metric-value" id="trackerInterested">—</div></div>
             <div class="card"><div class="metric-label">Berhasil Closing</div><div class="metric-value" id="trackerClosing">—</div></div>
             <div class="card"><div class="metric-label">Konversi Closing</div><div class="metric-value" id="trackerConversion">—</div></div>
+            <div class="card"><div class="metric-label">Sudah Dihubungi</div><div class="metric-value" id="trackerContacted">—</div></div>
+            <div class="card"><div class="metric-label">Dalam Follow-Up</div><div class="metric-value" id="trackerFollowUp">—</div></div>
+            <div class="card"><div class="metric-label">Tidak Tertarik</div><div class="metric-value" id="trackerNotInterested">—</div></div>
+            <div class="card"><div class="metric-label">Aktivitas 30 Hari</div><div class="metric-value" id="trackerActivities30">—</div></div>
+            <div class="card"><div class="metric-label">Chat WhatsApp Dibuka · 30 Hari</div><div class="metric-value" id="trackerWhatsApp30">—</div></div>
           </div>
           <div class="section-title" style="margin-top:18px">Perkembangan Prospek · 6 Bulan Terakhir</div>
           <div id="trackerMonthlyChart" style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;align-items:end;min-height:170px;margin-top:14px">
@@ -1301,7 +1306,7 @@ async function loadAffiliateCenter() {
   }
 
   async function loadDashboardFollowUps() {
-    const ids = ['dashFollowOverdue','dashFollowToday','dashFollowTomorrow','dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList','trackerTotal','trackerNew','trackerInterested','trackerClosing','trackerConversion','trackerMonthlyChart','trackerMonthlyNote'];
+    const ids = ['dashFollowOverdue','dashFollowToday','dashFollowTomorrow','dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList','trackerTotal','trackerNew','trackerInterested','trackerClosing','trackerConversion','trackerContacted','trackerFollowUp','trackerNotInterested','trackerActivities30','trackerWhatsApp30','trackerMonthlyChart','trackerMonthlyNote'];
     const nodes = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     const token = sessionStorage.getItem('dcv_access_token');
     if (!token) {
@@ -1318,11 +1323,25 @@ async function loadAffiliateCenter() {
       const newCount = leads.filter(item => item.status === 'baru').length;
       const interestedCount = leads.filter(item => item.status === 'tertarik').length;
       const closingCount = leads.filter(item => item.status === 'closing').length;
+      const contactedCount = leads.filter(item => item.status === 'dihubungi').length;
+      const followUpCount = leads.filter(item => item.status === 'follow_up').length;
+      const notInterestedCount = leads.filter(item => item.status === 'tidak_tertarik').length;
       nodes.trackerTotal.textContent = total;
       nodes.trackerNew.textContent = newCount;
       nodes.trackerInterested.textContent = interestedCount;
       nodes.trackerClosing.textContent = closingCount;
       nodes.trackerConversion.textContent = total ? ((closingCount / total) * 100).toFixed(1).replace('.', ',') + '%' : '0%';
+      nodes.trackerContacted.textContent = contactedCount;
+      nodes.trackerFollowUp.textContent = followUpCount;
+      nodes.trackerNotInterested.textContent = notInterestedCount;
+      const activitySince = new Date(); activitySince.setDate(activitySince.getDate() - 30);
+      const activityResponse = await fetch(SUPABASE_URL + '/rest/v1/lead_activities?select=id,activity_type,created_at&created_at=gte.' + encodeURIComponent(activitySince.toISOString()) + '&order=created_at.desc', {
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token }
+      });
+      const recentActivities = await activityResponse.json();
+      if (!activityResponse.ok) throw new Error(recentActivities.message || 'Gagal memuat aktivitas prospek.');
+      nodes.trackerActivities30.textContent = recentActivities.length;
+      nodes.trackerWhatsApp30.textContent = recentActivities.filter(activity => activity.activity_type === 'whatsapp_opened').length;
 
       const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
       const monthBuckets = [];
