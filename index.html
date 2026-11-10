@@ -374,6 +374,10 @@ main { max-width:1200px; padding:42px 16px 50px; }
           </div>
           <div class="card" style="grid-column:1/-1">
             <div class="section-title">Daftar Prospek Saya</div>
+            <div class="form-row" style="margin-top:12px;margin-bottom:10px">
+              <div class="field"><label for="leadSearchInput">Cari prospek</label><input id="leadSearchInput" type="search" placeholder="Cari nama, WhatsApp, atau email..."></div>
+              <div class="field"><label for="leadStatusFilter">Filter status</label><select id="leadStatusFilter"><option value="">Semua status</option><option value="baru">Baru</option><option value="dihubungi">Sudah Dihubungi</option><option value="follow_up">Follow-Up</option><option value="tertarik">Tertarik</option><option value="closing">Closing</option><option value="tidak_tertarik">Tidak Tertarik</option></select></div>
+            </div>
             <div id="leadList" class="section-sub">Memuat data leads...</div>
           </div>
         </div>
@@ -1113,8 +1117,18 @@ async function loadAffiliateCenter() {
           pipelineBox.appendChild(column);
         });
       }
+      const searchTerm = (document.getElementById('leadSearchInput')?.value || '').trim().toLowerCase();
+      const selectedStatus = document.getElementById('leadStatusFilter')?.value || '';
+      const visibleLeads = leads.filter(item => {
+        const searchable = [item.full_name,item.phone,item.email,item.source].join(' ').toLowerCase();
+        return (!searchTerm || searchable.includes(searchTerm)) && (!selectedStatus || item.status === selectedStatus);
+      });
       if (!leads.length) {
         listBox.textContent = 'Belum ada prospek. Tambahkan prospek pertama melalui formulir di atas.';
+        return;
+      }
+      if (!visibleLeads.length) {
+        listBox.textContent = 'Tidak ada prospek yang cocok dengan pencarian atau filter ini.';
         return;
       }
       const table = document.createElement('table');
@@ -1127,7 +1141,7 @@ async function loadAffiliateCenter() {
       });
       head.appendChild(headRow); table.appendChild(head);
       const body = document.createElement('tbody');
-      leads.forEach(item => {
+      visibleLeads.forEach(item => {
         const row = document.createElement('tr');
         const dueDate = item.follow_up_at ? new Date(item.follow_up_at) : null;
         const dueLabel = formatFollowUp(item.follow_up_at);
@@ -1300,6 +1314,8 @@ async function loadAffiliateCenter() {
   }
   window.recordLeadActivity = recordLeadActivity;
   window.loadLeads = loadLeads;
+  document.getElementById('leadSearchInput')?.addEventListener('input', () => loadLeads());
+  document.getElementById('leadStatusFilter')?.addEventListener('change', () => loadLeads());
   let leadReportRows = [];
   const leadStatusLabels = {baru:'Baru',dihubungi:'Sudah Dihubungi',follow_up:'Follow-Up',tertarik:'Tertarik',closing:'Closing',tidak_tertarik:'Tidak Tertarik'};
   async function loadLeadReport() {
