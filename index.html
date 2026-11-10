@@ -292,7 +292,39 @@ main { max-width:1200px; padding:42px 16px 50px; }
 </div>
       </section>
       <section class="page" id="training"><div class="page-head"><div><h1>Training</h1><div class="subtitle">Materi training untuk pengembangan bisnis network.</div></div></div><div class="card"><div class="section-title">Program Training</div><p class="section-sub">Materi akan ditampilkan setelah modul training dihubungkan.</p></div></section>
-      <section class="page" id="leads"><div class="page-head"><div><h1>Data Leads</h1><div class="subtitle">Kelola data prospek dan tindak lanjut.</div></div></div><div class="notice">Fitur Data Leads akan tersedia sesuai hak akses membership.</div></section>
+      <section class="page" id="leads">
+        <div class="page-head">
+          <div><h1>Data Leads</h1><div class="subtitle">Catat prospek, pantau status, dan kelola tindak lanjut Anda.</div></div>
+          <button class="secondary-btn" type="button" id="refreshLeadsButton">Muat Ulang</button>
+        </div>
+        <div class="content-grid">
+          <div class="card">
+            <div class="section-title">Tambah Prospek</div>
+            <form id="leadForm">
+              <div class="field"><label for="leadName">Nama prospek *</label><input id="leadName" type="text" required maxlength="120" placeholder="Nama lengkap prospek"></div>
+              <div class="form-row">
+                <div class="field"><label for="leadPhone">Nomor WhatsApp</label><input id="leadPhone" type="tel" maxlength="30" placeholder="08xxxxxxxxxx"></div>
+                <div class="field"><label for="leadEmail">Email</label><input id="leadEmail" type="email" maxlength="254" placeholder="email@contoh.com"></div>
+              </div>
+              <div class="form-row">
+                <div class="field"><label for="leadSource">Sumber prospek</label><input id="leadSource" type="text" maxlength="80" placeholder="WhatsApp, Facebook, TikTok..."></div>
+                <div class="field"><label for="leadStatus">Status</label><select id="leadStatus"><option value="baru">Baru</option><option value="dihubungi">Sudah Dihubungi</option><option value="follow_up">Follow Up</option><option value="tertarik">Tertarik</option><option value="closing">Closing</option><option value="tidak_tertarik">Tidak Tertarik</option></select></div>
+              </div>
+              <div class="field"><label for="leadNotes">Catatan / tindak lanjut</label><textarea id="leadNotes" rows="3" maxlength="2000" placeholder="Catat kebutuhan prospek dan rencana follow-up"></textarea></div>
+              <button class="primary-btn" id="saveLeadButton" type="submit">Simpan Prospek</button>
+              <p id="leadMessage" class="section-sub" role="status" style="margin-top:10px"></p>
+            </form>
+          </div>
+          <div class="card">
+            <div class="section-title">Ringkasan Prospek</div>
+            <div id="leadSummary" class="section-sub">Memuat ringkasan...</div>
+          </div>
+          <div class="card" style="grid-column:1/-1">
+            <div class="section-title">Daftar Prospek Saya</div>
+            <div id="leadList" class="section-sub">Memuat data leads...</div>
+          </div>
+        </div>
+      </section>
       
 <section class="page" id="affiliate">
   <div class="page-head">
@@ -364,6 +396,7 @@ function navigate(page) {
   document.querySelectorAll('.page').forEach(el => el.classList.toggle('active', el.id === page));
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.page === page));
   if (page === 'admin' && typeof window.loadAdminMembers === 'function') window.loadAdminMembers();
+  if (page === 'leads' && typeof window.loadLeads === 'function') window.loadLeads();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.page)));
@@ -905,6 +938,92 @@ async function loadAffiliateCenter() {
     if (listBox) listBox.textContent = error.message;
   }
 }
+
+  async function loadLeads() {
+    const listBox = document.getElementById('leadList');
+    const summaryBox = document.getElementById('leadSummary');
+    const messageBox = document.getElementById('leadMessage');
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token) {
+      listBox.textContent = 'Sesi berakhir. Silakan login kembali.';
+      summaryBox.textContent = 'Silakan login kembali.';
+      return;
+    }
+    listBox.textContent = 'Memuat data prospek...';
+    const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/leads?select=id,full_name,phone,email,source,status,notes,created_at&order=created_at.desc', { headers });
+      const leads = await response.json();
+      if (!response.ok) throw new Error(leads.message || 'Gagal mengambil data prospek.');
+      const counts = { baru: 0, dihubungi: 0, follow_up: 0, tertarik: 0, closing: 0, tidak_tertarik: 0 };
+      leads.forEach(item => { if (Object.prototype.hasOwnProperty.call(counts, item.status)) counts[item.status]++; });
+      summaryBox.textContent = 'Total: ' + leads.length + ' | Baru: ' + counts.baru + ' | Follow Up: ' + counts.follow_up + ' | Closing: ' + counts.closing;
+      if (!leads.length) {
+        listBox.textContent = 'Belum ada prospek. Tambahkan prospek pertama melalui formulir di atas.';
+        return;
+      }
+      const table = document.createElement('table');
+      table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;margin-top:10px';
+      const head = document.createElement('thead');
+      const headRow = document.createElement('tr');
+      ['Nama','WhatsApp','Email','Sumber','Status','Catatan','Tanggal'].forEach(label => {
+        const th = document.createElement('th'); th.textContent = label;
+        th.style.cssText = 'text-align:left;padding:10px 8px;border-bottom:1px solid #dbe5ef'; headRow.appendChild(th);
+      });
+      head.appendChild(headRow); table.appendChild(head);
+      const body = document.createElement('tbody');
+      leads.forEach(item => {
+        const row = document.createElement('tr');
+        [item.full_name,item.phone,item.email,item.source,item.status,item.notes,item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '-'].forEach(value => {
+          const td = document.createElement('td'); td.textContent = value || '-';
+          td.style.cssText = 'padding:10px 8px;border-bottom:1px solid #edf2f7;vertical-align:top'; row.appendChild(td);
+        });
+        body.appendChild(row);
+      });
+      table.appendChild(body); listBox.replaceChildren(table);
+    } catch (error) {
+      listBox.textContent = error.message || 'Gagal memuat data leads.';
+      summaryBox.textContent = 'Data belum dapat dimuat.';
+    }
+  }
+  window.loadLeads = loadLeads;
+
+  document.getElementById('leadForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+    const button = document.getElementById('saveLeadButton');
+    const message = document.getElementById('leadMessage');
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token) { message.textContent = 'Sesi berakhir. Silakan login kembali.'; return; }
+    const fullName = document.getElementById('leadName').value.trim();
+    if (!fullName) { message.textContent = 'Nama prospek wajib diisi.'; return; }
+    button.disabled = true; button.textContent = 'Menyimpan...'; message.textContent = '';
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/leads', {
+        method: 'POST',
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          full_name: fullName,
+          phone: document.getElementById('leadPhone').value.trim() || null,
+          email: document.getElementById('leadEmail').value.trim() || null,
+          source: document.getElementById('leadSource').value.trim() || null,
+          status: document.getElementById('leadStatus').value,
+          notes: document.getElementById('leadNotes').value.trim() || null
+        })
+      });
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message || result.details || 'Gagal menyimpan prospek.');
+      }
+      this.reset();
+      message.textContent = 'Prospek berhasil disimpan.';
+      await loadLeads();
+    } catch(error) {
+      message.textContent = 'Gagal: ' + (error.message || 'Periksa koneksi Supabase.');
+    } finally {
+      button.disabled = false; button.textContent = 'Simpan Prospek';
+    }
+  });
+  document.getElementById('refreshLeadsButton').addEventListener('click', loadLeads);
 
   async function verifyToken(token, email, fullName) {
     const response = await fetch(SUPABASE_URL + '/rest/v1/rpc/is_super_admin', {
