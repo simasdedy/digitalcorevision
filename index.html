@@ -924,6 +924,80 @@ async function loadAffiliateCenter() {
     showLoginError('Sesi sebelumnya tidak berlaku: ' + error.message);
   });
 })();
+// Memproses token setelah konfirmasi email Supabase
+(async function handleEmailConfirmation() {
+  const hashParams = new URLSearchParams(
+    window.location.hash.substring(1)
+  );
+
+  const accessToken = hashParams.get('access_token');
+  const authType = hashParams.get('type');
+
+  if (!accessToken || authType !== 'signup') return;
+
+  try {
+    const userResponse = await fetch(SUPABASE_URL + '/auth/v1/user', {
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: 'Bearer ' + accessToken
+      }
+    });
+
+    const user = await userResponse.json();
+
+    if (!userResponse.ok) {
+      throw new Error(user.message || 'Gagal membaca akun member.');
+    }
+
+    const referralCode = user.user_metadata &&
+      user.user_metadata.referral_code;
+
+    if (!referralCode) {
+      throw new Error('Kode referral tidak ditemukan pada akun.');
+    }
+
+    const referralResponse = await fetch(
+      SUPABASE_URL + '/rest/v1/rpc/complete_referral_registration',
+      {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          Authorization: 'Bearer ' + accessToken,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          p_referral_code: referralCode
+        })
+      }
+    );
+
+    const referralResult = await referralResponse.json();
+
+    if (!referralResponse.ok) {
+      throw new Error(
+        referralResult.message ||
+        referralResult.error ||
+        'Pendaftaran referral gagal.'
+      );
+    }
+
+    window.history.replaceState(
+      {},
+      document.title,
+      window.location.pathname + window.location.search
+    );
+
+    enterMemberApp(
+      accessToken,
+      user.email,
+      user.user_metadata.full_name
+    );
+
+  } catch (error) {
+    console.error('Konfirmasi referral gagal:', error);
+    alert('Pendaftaran referral belum berhasil: ' + error.message);
+  }
+})();
 </script>
 </body>
 </html>
