@@ -325,6 +325,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
               </div>
               <div class="field"><label for="leadFollowUpAt">Jadwal follow-up</label><input id="leadFollowUpAt" type="datetime-local"><small class="section-sub">Kosongkan jika belum ada jadwal follow-up.</small></div>
               <div class="field"><label for="leadNotes">Catatan / tindak lanjut</label><textarea id="leadNotes" rows="3" maxlength="2000" placeholder="Catat kebutuhan prospek dan rencana follow-up"></textarea></div>
+              <div class="field"><label for="leadWhatsappTemplate">Template pesan WhatsApp</label><textarea id="leadWhatsappTemplate" rows="3" maxlength="1500">Halo {nama}, apa kabar? Saya ingin menindaklanjuti obrolan kita sebelumnya. Apakah ada waktu yang tepat untuk berdiskusi kembali?</textarea><small class="section-sub">Gunakan {nama} untuk otomatis memasukkan nama prospek. Template ini dipakai saat menekan tombol WhatsApp atau Salin Pesan.</small></div>
               <button class="primary-btn" id="saveLeadButton" type="submit">Simpan Prospek</button>
               <p id="leadMessage" class="section-sub" role="status" style="margin-top:10px"></p>
             </form>
@@ -1043,6 +1044,42 @@ async function loadAffiliateCenter() {
 
         const actionCell = document.createElement('td');
         actionCell.style.cssText = 'padding:10px 8px;border-bottom:1px solid #edf2f7;white-space:nowrap';
+        const whatsappButton = document.createElement('button');
+        whatsappButton.type = 'button';
+        whatsappButton.className = 'secondary-btn';
+        whatsappButton.textContent = 'WhatsApp';
+        whatsappButton.style.marginRight = '6px';
+        whatsappButton.addEventListener('click', function () {
+          const phone = String(item.phone || '').replace(/\\D/g, '');
+          let waPhone = phone;
+          if (waPhone.startsWith('0')) waPhone = '62' + waPhone.slice(1);
+          else if (waPhone.startsWith('8')) waPhone = '62' + waPhone;
+          if (!waPhone || waPhone.length < 10) { alert('Nomor WhatsApp prospek belum valid. Periksa nomor pada data prospek.'); return; }
+          const template = document.getElementById('leadWhatsappTemplate');
+          const messageText = (template && template.value.trim() ? template.value.trim() : 'Halo {nama}, apa kabar? Saya ingin menindaklanjuti obrolan kita sebelumnya.')
+            .replace(/\\{nama\\}/gi, item.full_name || 'Bapak/Ibu');
+          window.open('https://wa.me/' + waPhone + '?text=' + encodeURIComponent(messageText), '_blank', 'noopener,noreferrer');
+        });
+        const copyMessageButton = document.createElement('button');
+        copyMessageButton.type = 'button';
+        copyMessageButton.className = 'secondary-btn';
+        copyMessageButton.textContent = 'Salin Pesan';
+        copyMessageButton.style.marginRight = '6px';
+        copyMessageButton.addEventListener('click', async function () {
+          const template = document.getElementById('leadWhatsappTemplate');
+          const messageText = (template && template.value.trim() ? template.value.trim() : 'Halo {nama}, apa kabar? Saya ingin menindaklanjuti obrolan kita sebelumnya.')
+            .replace(/\\{nama\\}/gi, item.full_name || 'Bapak/Ibu');
+          try {
+            await navigator.clipboard.writeText(messageText);
+            alert('Pesan follow-up berhasil disalin.');
+          } catch (error) {
+            const temp = document.createElement('textarea');
+            temp.value = messageText; temp.style.position = 'fixed'; temp.style.opacity = '0';
+            document.body.appendChild(temp); temp.select();
+            const copied = document.execCommand('copy'); temp.remove();
+            alert(copied ? 'Pesan follow-up berhasil disalin.' : 'Tidak dapat menyalin otomatis. Silakan salin pesan secara manual.');
+          }
+        });
         const editButton = document.createElement('button');
         editButton.type = 'button';
         editButton.className = 'secondary-btn';
@@ -1094,7 +1131,7 @@ async function loadAffiliateCenter() {
             deleteButton.disabled = false;
           }
         });
-        actionCell.append(editButton, deleteButton);
+        actionCell.append(whatsappButton, copyMessageButton, editButton, deleteButton);
         row.appendChild(actionCell);
         body.appendChild(row);
       });
