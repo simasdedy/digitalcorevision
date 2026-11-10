@@ -591,6 +591,22 @@ memberRows.forEach(member => {
   document.getElementById('showAdminTab').addEventListener('click', () => showAuthTab('admin'));
   document.getElementById('showMemberTab').addEventListener('click', () => showAuthTab('member'));
   document.getElementById('toggleMemberSignup').addEventListener('click', () => setMemberSignupMode(!memberSignupMode));
+  
+// Otomatisasi pendaftaran melalui link referral
+const referralParams = new URLSearchParams(window.location.search);
+const incomingReferralCode = referralParams.get('ref');
+
+if (incomingReferralCode) {
+  showAuthTab('member');
+  setMemberSignupMode(true);
+
+  const referralInput = document.getElementById('memberReferral');
+
+  if (referralInput) {
+    referralInput.value = incomingReferralCode.trim().toUpperCase();
+  }
+}
+
   memberForm.addEventListener('submit', async function (event) {
     event.preventDefault();
     memberSubmitButton.disabled = true;
