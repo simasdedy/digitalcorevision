@@ -832,9 +832,15 @@ async function loadAffiliateCenter() {
     linkBox.textContent = referralLink;
 
     const referralResponse = await fetch(
-      SUPABASE_URL + '/rest/v1/member_referrals?select=member_id,created_at,referral_code_used&sponsor_id=eq.' +
-      encodeURIComponent(user.id) + '&order=created_at.desc',
-      { headers }
+      SUPABASE_URL + '/rest/v1/rpc/get_my_referrals',
+      {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: '{}'
+      }
     );
     const referrals = await referralResponse.json();
     if (!referralResponse.ok) {
@@ -853,32 +859,43 @@ async function loadAffiliateCenter() {
     table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;margin-top:10px';
     const thead = document.createElement('thead');
     const headerRow = document.createElement('tr');
-    ['ID Member', 'Kode Digunakan', 'Tanggal Bergabung'].forEach(function (label) {
+
+    ['Nama Member', 'Email', 'Kode Referral', 'Tanggal Bergabung'].forEach(function (label) {
       const th = document.createElement('th');
       th.textContent = label;
       th.style.cssText = 'text-align:left;padding:10px 8px;border-bottom:1px solid #dbe5ef';
       headerRow.appendChild(th);
     });
+
     thead.appendChild(headerRow);
     table.appendChild(thead);
 
     const tbody = document.createElement('tbody');
     referrals.forEach(function (referral) {
       const row = document.createElement('tr');
-      const memberCell = document.createElement('td');
-      memberCell.textContent = referral.member_id || '-';
+
+      const nameCell = document.createElement('td');
+      nameCell.textContent = referral.full_name || '-';
+
+      const emailCell = document.createElement('td');
+      emailCell.textContent = referral.email || '-';
+
       const codeCell = document.createElement('td');
       codeCell.textContent = referral.referral_code_used || '-';
+
       const dateCell = document.createElement('td');
       dateCell.textContent = referral.created_at
         ? new Date(referral.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
         : '-';
-      [memberCell, codeCell, dateCell].forEach(function (cell) {
+
+      [nameCell, emailCell, codeCell, dateCell].forEach(function (cell) {
         cell.style.cssText = 'padding:10px 8px;border-bottom:1px solid #edf2f7;vertical-align:top';
         row.appendChild(cell);
       });
+
       tbody.appendChild(row);
     });
+
     table.appendChild(tbody);
     listBox.replaceChildren(table);
   } catch (error) {
