@@ -310,6 +310,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
                 <div class="field"><label for="leadSource">Sumber prospek</label><input id="leadSource" type="text" maxlength="80" placeholder="WhatsApp, Facebook, TikTok..."></div>
                 <div class="field"><label for="leadStatus">Status</label><select id="leadStatus"><option value="baru">Baru</option><option value="dihubungi">Sudah Dihubungi</option><option value="follow_up">Follow Up</option><option value="tertarik">Tertarik</option><option value="closing">Closing</option><option value="tidak_tertarik">Tidak Tertarik</option></select></div>
               </div>
+              <div class="field"><label for="leadFollowUpAt">Jadwal follow-up</label><input id="leadFollowUpAt" type="datetime-local"><small class="section-sub">Kosongkan jika belum ada jadwal follow-up.</small></div>
               <div class="field"><label for="leadNotes">Catatan / tindak lanjut</label><textarea id="leadNotes" rows="3" maxlength="2000" placeholder="Catat kebutuhan prospek dan rencana follow-up"></textarea></div>
               <button class="primary-btn" id="saveLeadButton" type="submit">Simpan Prospek</button>
               <p id="leadMessage" class="section-sub" role="status" style="margin-top:10px"></p>
@@ -941,11 +942,26 @@ async function loadAffiliateCenter() {
 
   let editingLeadId = null;
 
+  function toLocalDateTimeInput(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  }
+
+  function formatFollowUp(value) {
+    if (!value) return 'Belum dijadwalkan';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? 'Jadwal tidak valid' : date.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
   function resetLeadFormMode() {
     editingLeadId = null;
     document.querySelector('#leadForm .section-title');
     const title = document.querySelector('#leads .card .section-title');
     if (title) title.textContent = 'Tambah Prospek';
+    const followUpInput = document.getElementById('leadFollowUpAt');
+    if (followUpInput) followUpInput.value = '';
     const button = document.getElementById('saveLeadButton');
     if (button) button.textContent = 'Simpan Prospek';
   }
@@ -963,12 +979,24 @@ async function loadAffiliateCenter() {
     listBox.textContent = 'Memuat data prospek...';
     const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
     try {
-      const response = await fetch(SUPABASE_URL + '/rest/v1/leads?select=id,full_name,phone,email,source,status,notes,created_at&order=created_at.desc', { headers });
+      const response = await fetch(SUPABASE_URL + '/rest/v1/leads?select=id,full_name,phone,email,source,status,notes,follow_up_at,created_at&order=created_at.desc', { headers });
       const leads = await response.json();
       if (!response.ok) throw new Error(leads.message || 'Gagal mengambil data prospek.');
       const counts = { baru: 0, dihubungi: 0, follow_up: 0, tertarik: 0, closing: 0, tidak_tertarik: 0 };
-      leads.forEach(item => { if (Object.prototype.hasOwnProperty.call(counts, item.status)) counts[item.status]++; });
-      summaryBox.textContent = 'Total: ' + leads.length + ' | Baru: ' + counts.baru + ' | Follow Up: ' + counts.follow_up + ' | Closing: ' + counts.closing;
+      let overdueCount = 0;
+      let todayCount = 0;
+      const now = new Date();
+      leads.forEach(item => {
+        if (Object.prototype.hasOwnProperty.call(counts, item.status)) counts[item.status]++;
+        if (item.follow_up_at && item.status !== 'closing' && item.status !== 'tidak_tertarik') {
+          const due = new Date(item.follow_up_at);
+          if (!Number.isNaN(due.getTime())) {
+            if (due < now && due.toDateString() !== now.toDateString()) overdueCount++;
+            else if (due.toDateString() === now.toDateString()) todayCount++;
+          }
+        }
+      });
+      summaryBox.textContent = 'Total: ' + leads.length + ' | Baru: ' + counts.baru + ' | Follow Up: ' + counts.follow_up + ' | Closing: ' + counts.closing + ' | Terlambat: ' + overdueCount + ' | Hari ini: ' + todayCount;
       if (!leads.length) {
         listBox.textContent = 'Belum ada prospek. Tambahkan prospek pertama melalui formulir di atas.';
         return;
@@ -977,7 +1005,7 @@ async function loadAffiliateCenter() {
       table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;margin-top:10px';
       const head = document.createElement('thead');
       const headRow = document.createElement('tr');
-      ['Nama','WhatsApp','Email','Sumber','Status','Catatan','Tanggal','Aksi'].forEach(label => {
+      ['Nama','WhatsApp','Email','Sumber','Status','Jadwal Follow-up','Catatan','Tanggal','Aksi'].forEach(label => {
         const th = document.createElement('th'); th.textContent = label;
         th.style.cssText = 'text-align:left;padding:10px 8px;border-bottom:1px solid #dbe5ef'; headRow.appendChild(th);
       });
@@ -985,9 +1013,17 @@ async function loadAffiliateCenter() {
       const body = document.createElement('tbody');
       leads.forEach(item => {
         const row = document.createElement('tr');
-        [item.full_name,item.phone,item.email,item.source,item.status,item.notes,item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '-'].forEach(value => {
+        const dueDate = item.follow_up_at ? new Date(item.follow_up_at) : null;
+        const dueLabel = formatFollowUp(item.follow_up_at);
+        const isOpenLead = item.status !== 'closing' && item.status !== 'tidak_tertarik';
+        const dueIsOverdue = dueDate && !Number.isNaN(dueDate.getTime()) && dueDate < new Date() && dueDate.toDateString() !== new Date().toDateString() && isOpenLead;
+        const dueIsToday = dueDate && !Number.isNaN(dueDate.getTime()) && dueDate.toDateString() === new Date().toDateString() && isOpenLead;
+        [item.full_name,item.phone,item.email,item.source,item.status,dueLabel,item.notes,item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '-'].forEach((value, index) => {
           const td = document.createElement('td'); td.textContent = value || '-';
-          td.style.cssText = 'padding:10px 8px;border-bottom:1px solid #edf2f7;vertical-align:top'; row.appendChild(td);
+          td.style.cssText = 'padding:10px 8px;border-bottom:1px solid #edf2f7;vertical-align:top';
+          if (index === 5 && dueIsOverdue) { td.style.color = '#b91c1c'; td.style.fontWeight = '700'; td.textContent = 'TERLAMBAT · ' + dueLabel; }
+          else if (index === 5 && dueIsToday) { td.style.color = '#b45309'; td.style.fontWeight = '700'; td.textContent = 'HARI INI · ' + dueLabel; }
+          row.appendChild(td);
         });
 
         const actionCell = document.createElement('td');
@@ -1005,6 +1041,7 @@ async function loadAffiliateCenter() {
           document.getElementById('leadSource').value = item.source || '';
           document.getElementById('leadStatus').value = item.status || 'baru';
           document.getElementById('leadNotes').value = item.notes || '';
+          document.getElementById('leadFollowUpAt').value = toLocalDateTimeInput(item.follow_up_at);
           const title = document.querySelector('#leads .card .section-title');
           if (title) title.textContent = 'Edit Prospek';
           const saveButton = document.getElementById('saveLeadButton');
@@ -1070,7 +1107,8 @@ async function loadAffiliateCenter() {
         email: document.getElementById('leadEmail').value.trim() || null,
         source: document.getElementById('leadSource').value.trim() || null,
         status: document.getElementById('leadStatus').value,
-        notes: document.getElementById('leadNotes').value.trim() || null
+        notes: document.getElementById('leadNotes').value.trim() || null,
+        follow_up_at: document.getElementById('leadFollowUpAt').value ? new Date(document.getElementById('leadFollowUpAt').value).toISOString() : null
       };
       const isEditing = Boolean(editingLeadId);
       const endpoint = isEditing
