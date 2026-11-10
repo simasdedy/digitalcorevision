@@ -1005,8 +1005,8 @@ async function loadAffiliateCenter() {
         if (item.follow_up_at && item.status !== 'closing' && item.status !== 'tidak_tertarik') {
           const due = new Date(item.follow_up_at);
           if (!Number.isNaN(due.getTime())) {
-            if (due < now && due.toDateString() !== now.toDateString()) overdueCount++;
-            else if (due.toDateString() === now.toDateString()) todayCount++;
+            if (due < now) overdueCount++;
+            else if (due >= now && due.toDateString() === now.toDateString()) todayCount++;
           }
         }
       });
@@ -1030,8 +1030,9 @@ async function loadAffiliateCenter() {
         const dueDate = item.follow_up_at ? new Date(item.follow_up_at) : null;
         const dueLabel = formatFollowUp(item.follow_up_at);
         const isOpenLead = item.status !== 'closing' && item.status !== 'tidak_tertarik';
-        const dueIsOverdue = dueDate && !Number.isNaN(dueDate.getTime()) && dueDate < new Date() && dueDate.toDateString() !== new Date().toDateString() && isOpenLead;
-        const dueIsToday = dueDate && !Number.isNaN(dueDate.getTime()) && dueDate.toDateString() === new Date().toDateString() && isOpenLead;
+        const currentTime = new Date();
+        const dueIsOverdue = dueDate && !Number.isNaN(dueDate.getTime()) && dueDate < currentTime && isOpenLead;
+        const dueIsToday = dueDate && !Number.isNaN(dueDate.getTime()) && dueDate >= currentTime && dueDate.toDateString() === currentTime.toDateString() && isOpenLead;
         [item.full_name,item.phone,item.email,item.source,item.status,dueLabel,item.notes,item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '-'].forEach((value, index) => {
           const td = document.createElement('td'); td.textContent = value || '-';
           td.style.cssText = 'padding:10px 8px;border-bottom:1px solid #edf2f7;vertical-align:top';
@@ -1123,8 +1124,9 @@ async function loadAffiliateCenter() {
       const startTomorrow = new Date(startToday); startTomorrow.setDate(startTomorrow.getDate()+1);
       const startAfterTomorrow = new Date(startTomorrow); startAfterTomorrow.setDate(startAfterTomorrow.getDate()+1);
       const openLeads = leads.filter(item => item.status !== 'closing' && item.status !== 'tidak_tertarik');
-      const overdue = openLeads.filter(item => new Date(item.follow_up_at) < startToday);
-      const today = openLeads.filter(item => new Date(item.follow_up_at) >= startToday && new Date(item.follow_up_at) < startTomorrow);
+      const now = new Date();
+      const overdue = openLeads.filter(item => new Date(item.follow_up_at) < now);
+      const today = openLeads.filter(item => new Date(item.follow_up_at) >= now && new Date(item.follow_up_at) < startTomorrow);
       const tomorrow = openLeads.filter(item => new Date(item.follow_up_at) >= startTomorrow && new Date(item.follow_up_at) < startAfterTomorrow);
       nodes.dashFollowOverdue.textContent = overdue.length;
       nodes.dashFollowToday.textContent = today.length;
