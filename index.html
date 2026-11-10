@@ -1050,14 +1050,14 @@ async function loadAffiliateCenter() {
         whatsappButton.textContent = 'WhatsApp';
         whatsappButton.style.marginRight = '6px';
         whatsappButton.addEventListener('click', function () {
-          const phone = String(item.phone || '').replace(/\\D/g, '');
+          const phone = String(item.phone || '').replace(/\D/g, '');
           let waPhone = phone;
           if (waPhone.startsWith('0')) waPhone = '62' + waPhone.slice(1);
           else if (waPhone.startsWith('8')) waPhone = '62' + waPhone;
           if (!waPhone || waPhone.length < 10) { alert('Nomor WhatsApp prospek belum valid. Periksa nomor pada data prospek.'); return; }
           const template = document.getElementById('leadWhatsappTemplate');
           const messageText = (template && template.value.trim() ? template.value.trim() : 'Halo {nama}, apa kabar? Saya ingin menindaklanjuti obrolan kita sebelumnya.')
-            .replace(/\\{nama\\}/gi, item.full_name || 'Bapak/Ibu');
+            .replace(/\{nama\}/gi, item.full_name || 'Bapak/Ibu');
           window.open('https://wa.me/' + waPhone + '?text=' + encodeURIComponent(messageText), '_blank', 'noopener,noreferrer');
         });
         const copyMessageButton = document.createElement('button');
@@ -1068,7 +1068,7 @@ async function loadAffiliateCenter() {
         copyMessageButton.addEventListener('click', async function () {
           const template = document.getElementById('leadWhatsappTemplate');
           const messageText = (template && template.value.trim() ? template.value.trim() : 'Halo {nama}, apa kabar? Saya ingin menindaklanjuti obrolan kita sebelumnya.')
-            .replace(/\\{nama\\}/gi, item.full_name || 'Bapak/Ibu');
+            .replace(/\{nama\}/gi, item.full_name || 'Bapak/Ibu');
           try {
             await navigator.clipboard.writeText(messageText);
             alert('Pesan follow-up berhasil disalin.');
