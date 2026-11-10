@@ -236,6 +236,19 @@ main { max-width:1200px; padding:42px 16px 50px; }
         <div class="feature-banner"><div><span class="eyebrow">DigitalCoreVision</span><h2>ESKAYVIE</h2><p>Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja</p></div><button class="watch-btn" onclick="showToast('Video pengenalan akan dibuka saat konten dihubungkan.')">▶ &nbsp; TONTON SEKARANG</button></div>
         <div class="feature-image">Area video / banner utama ESKAYVIE<br><small>Gambar referensi dapat dipasang pada tahap integrasi konten</small></div>
         <div class="member-shortcuts"><div class="shortcut"><strong>Konten Pembelajaran</strong><span>Akses materi dan panduan bisnis digital.</span></div><div class="shortcut"><strong>Training</strong><span>Pelajari strategi membangun network.</span></div><div class="shortcut"><strong>Data Leads</strong><span>Kelola prospek dan aktivitas follow-up.</span></div></div>
+        <div class="card" id="dashboardFollowUpCard" style="margin-top:20px">
+          <div class="page-head"><div><h2 style="margin:0">Pengingat Follow-Up</h2><div class="subtitle">Pantau prospek yang perlu dihubungi hari ini dan berikutnya.</div></div><button class="secondary-btn" type="button" onclick="navigate('leads')">Buka Data Leads</button></div>
+          <div class="cards" style="margin:14px 0">
+            <div class="card"><div class="metric-label">Terlambat</div><div class="metric-value" id="dashFollowOverdue">—</div></div>
+            <div class="card"><div class="metric-label">Hari Ini</div><div class="metric-value" id="dashFollowToday">—</div></div>
+            <div class="card"><div class="metric-label">Besok</div><div class="metric-value" id="dashFollowTomorrow">—</div></div>
+          </div>
+          <div class="content-grid">
+            <div><h3 style="font-size:14px">Perlu ditindaklanjuti</h3><div id="dashFollowOverdueList" class="section-sub">Memuat...</div></div>
+            <div><h3 style="font-size:14px">Jadwal hari ini</h3><div id="dashFollowTodayList" class="section-sub">Memuat...</div></div>
+            <div><h3 style="font-size:14px">Jadwal besok</h3><div id="dashFollowTomorrowList" class="section-sub">Memuat...</div></div>
+          </div>
+        </div>
       </section>
       <section class="page" id="members">
         <div class="page-head"><div><h1>Manajemen Member</h1><div class="subtitle">Kelola akun, organisasi, dan status akses member.</div></div><button class="primary-btn" onclick="openModal()">＋ Tambah Member</button></div>
@@ -398,6 +411,7 @@ function navigate(page) {
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.page === page));
   if (page === 'admin' && typeof window.loadAdminMembers === 'function') window.loadAdminMembers();
   if (page === 'leads' && typeof window.loadLeads === 'function') window.loadLeads();
+  if (page === 'dashboard' && typeof window.loadDashboardFollowUps === 'function') window.loadDashboardFollowUps();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.page)));
@@ -1090,6 +1104,53 @@ async function loadAffiliateCenter() {
     }
   }
   window.loadLeads = loadLeads;
+
+  async function loadDashboardFollowUps() {
+    const ids = ['dashFollowOverdue','dashFollowToday','dashFollowTomorrow','dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList'];
+    const nodes = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token) {
+      ['dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList'].forEach(id => { if (nodes[id]) nodes[id].textContent = 'Silakan login kembali.'; });
+      return;
+    }
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/leads?select=id,full_name,phone,status,follow_up_at&follow_up_at=not.is.null&order=follow_up_at.asc', {
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token }
+      });
+      const leads = await response.json();
+      if (!response.ok) throw new Error(leads.message || 'Gagal memuat pengingat follow-up.');
+      const startToday = new Date(); startToday.setHours(0,0,0,0);
+      const startTomorrow = new Date(startToday); startTomorrow.setDate(startTomorrow.getDate()+1);
+      const startAfterTomorrow = new Date(startTomorrow); startAfterTomorrow.setDate(startAfterTomorrow.getDate()+1);
+      const openLeads = leads.filter(item => item.status !== 'closing' && item.status !== 'tidak_tertarik');
+      const overdue = openLeads.filter(item => new Date(item.follow_up_at) < startToday);
+      const today = openLeads.filter(item => new Date(item.follow_up_at) >= startToday && new Date(item.follow_up_at) < startTomorrow);
+      const tomorrow = openLeads.filter(item => new Date(item.follow_up_at) >= startTomorrow && new Date(item.follow_up_at) < startAfterTomorrow);
+      nodes.dashFollowOverdue.textContent = overdue.length;
+      nodes.dashFollowToday.textContent = today.length;
+      nodes.dashFollowTomorrow.textContent = tomorrow.length;
+      function renderList(target, items, emptyText) {
+        target.replaceChildren();
+        if (!items.length) { target.textContent = emptyText; return; }
+        items.forEach(item => {
+          const entry = document.createElement('div');
+          entry.style.cssText = 'padding:10px 0;border-bottom:1px solid #edf2f7';
+          const name = document.createElement('strong'); name.textContent = item.full_name || 'Tanpa nama';
+          const detail = document.createElement('div'); detail.className = 'section-sub';
+          detail.textContent = formatFollowUp(item.follow_up_at) + (item.phone ? ' · ' + item.phone : '');
+          const action = document.createElement('button'); action.type = 'button'; action.className = 'secondary-btn'; action.textContent = 'Kelola prospek'; action.style.marginTop = '7px';
+          action.addEventListener('click', () => navigate('leads'));
+          entry.append(name, detail, action); target.appendChild(entry);
+        });
+      }
+      renderList(nodes.dashFollowOverdueList, overdue, 'Tidak ada follow-up yang terlambat.');
+      renderList(nodes.dashFollowTodayList, today, 'Tidak ada jadwal follow-up hari ini.');
+      renderList(nodes.dashFollowTomorrowList, tomorrow, 'Belum ada jadwal follow-up besok.');
+    } catch (error) {
+      ['dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList'].forEach(id => { if (nodes[id]) nodes[id].textContent = error.message || 'Gagal memuat pengingat.'; });
+    }
+  }
+  window.loadDashboardFollowUps = loadDashboardFollowUps;
 
   document.getElementById('leadForm').addEventListener('submit', async function(event) {
     event.preventDefault();
