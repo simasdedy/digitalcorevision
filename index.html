@@ -325,7 +325,8 @@ main { max-width:1200px; padding:42px 16px 50px; }
               </div>
               <div class="field"><label for="leadFollowUpAt">Jadwal follow-up</label><input id="leadFollowUpAt" type="datetime-local"><small class="section-sub">Kosongkan jika belum ada jadwal follow-up.</small></div>
               <div class="field"><label for="leadNotes">Catatan / tindak lanjut</label><textarea id="leadNotes" rows="3" maxlength="2000" placeholder="Catat kebutuhan prospek dan rencana follow-up"></textarea></div>
-              <div class="field"><label for="leadWhatsappTemplate">Template pesan WhatsApp</label><textarea id="leadWhatsappTemplate" rows="3" maxlength="1500">Halo {nama}, apa kabar? Saya ingin menindaklanjuti obrolan kita sebelumnya. Apakah ada waktu yang tepat untuk berdiskusi kembali?</textarea><small class="section-sub">Gunakan {nama} untuk otomatis memasukkan nama prospek. Template ini dipakai saat menekan tombol WhatsApp atau Salin Pesan.</small></div>
+              <div class="field"><label for="leadWhatsappPreset">Pilih template berdasarkan tahapan prospek</label><select id="leadWhatsappPreset"><option value="">Pilih template pesan...</option><option value="opening">1. Pesan pembuka</option><option value="followup1">2. Follow-up pertama</option><option value="followup2">3. Follow-up kedua</option><option value="objection">4. Menjawab keberatan</option><option value="offer">5. Penawaran produk / peluang</option><option value="closing">6. Mengarahkan ke keputusan</option></select></div>
+              <div class="field"><label for="leadWhatsappTemplate">Isi pesan WhatsApp (bisa diedit)</label><textarea id="leadWhatsappTemplate" rows="4" maxlength="1500">Halo {nama}, apa kabar? Saya ingin menindaklanjuti obrolan kita sebelumnya. Apakah ada waktu yang tepat untuk berdiskusi kembali?</textarea><small class="section-sub">Gunakan {nama} untuk otomatis memasukkan nama prospek. Pilih template di atas, lalu sesuaikan sebelum mengirim atau menyalin pesan.</small></div>
               <button class="primary-btn" id="saveLeadButton" type="submit">Simpan Prospek</button>
               <p id="leadMessage" class="section-sub" role="status" style="margin-top:10px"></p>
             </form>
@@ -1142,6 +1143,22 @@ async function loadAffiliateCenter() {
     }
   }
   window.loadLeads = loadLeads;
+
+  const whatsappPresets = {
+    opening: 'Halo {nama}, perkenalkan saya [nama Anda]. Saya ingin menyapa dan berbagi informasi yang mungkin relevan dengan kebutuhan Anda. Apakah boleh saya bertanya sebentar?',
+    followup1: 'Halo {nama}, apa kabar? Saya izin menindaklanjuti pesan saya sebelumnya. Apakah informasi yang saya kirim sudah sempat dilihat? Jika ada pertanyaan, saya siap membantu.',
+    followup2: 'Halo {nama}, semoga aktivitasnya lancar. Saya ingin memastikan apakah topik yang sempat kita bahas masih ingin Anda pertimbangkan. Tidak apa-apa jika saat ini belum menjadi prioritas.',
+    objection: 'Terima kasih sudah menyampaikan pertimbangannya, {nama}. Saya memahami hal tersebut. Boleh saya tahu bagian mana yang masih menjadi keraguan, supaya saya bisa memberikan penjelasan yang sesuai?',
+    offer: 'Halo {nama}, berdasarkan obrolan kita, saya ingin membagikan informasi lebih lanjut tentang [nama produk / peluang] yang mungkin sesuai dengan kebutuhan Anda. Apakah berkenan jika saya kirim detailnya?',
+    closing: 'Halo {nama}, setelah mempertimbangkan informasi yang sudah kita bahas, apakah ada hal terakhir yang ingin ditanyakan sebelum menentukan langkah selanjutnya? Silakan pilih yang paling nyaman, tanpa terburu-buru.'
+  };
+  const whatsappPresetSelect = document.getElementById('leadWhatsappPreset');
+  if (whatsappPresetSelect) {
+    whatsappPresetSelect.addEventListener('change', function () {
+      const selectedMessage = whatsappPresets[this.value];
+      if (selectedMessage) document.getElementById('leadWhatsappTemplate').value = selectedMessage;
+    });
+  }
 
   async function loadDashboardFollowUps() {
     const ids = ['dashFollowOverdue','dashFollowToday','dashFollowTomorrow','dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList'];
