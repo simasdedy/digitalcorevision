@@ -1714,6 +1714,8 @@ async function loadAffiliateCenter() {
     document.body.classList.remove('member-authenticated');
     document.body.classList.add('admin-authenticated');
     document.getElementById('systemSettingsCard').hidden = false;
+    // Setelah Super Admin berhasil diverifikasi, buka Dashboard dan muat statistik serta pengingat.
+    navigate('dashboard');
   }
 
   loginForm.addEventListener('submit', async function (event) {
