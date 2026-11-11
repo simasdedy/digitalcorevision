@@ -1526,11 +1526,17 @@ async function loadAffiliateCenter() {
       return;
     }
     try {
-      const response = await fetch(SUPABASE_URL + '/rest/v1/leads?select=id,full_name,phone,status,follow_up_at,created_at&order=created_at.desc', {
-        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token }
-      });
-      const leads = await response.json();
+      const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
+      const activitySince = new Date();
+      activitySince.setDate(activitySince.getDate() - 30);
+      // Ambil data prospek dan aktivitas secara bersamaan agar dashboard lebih responsif.
+      const [response, activityResponse] = await Promise.all([
+        fetch(SUPABASE_URL + '/rest/v1/leads?select=id,full_name,phone,status,follow_up_at,created_at&order=created_at.desc', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/lead_activities?select=id,activity_type,created_at&created_at=gte.' + encodeURIComponent(activitySince.toISOString()) + '&order=created_at.desc', { headers })
+      ]);
+      const [leads, recentActivities] = await Promise.all([response.json(), activityResponse.json()]);
       if (!response.ok) throw new Error(leads.message || 'Gagal memuat pengingat follow-up.');
+      if (!activityResponse.ok) throw new Error(recentActivities.message || 'Gagal memuat aktivitas prospek.');
       const total = leads.length;
       const newCount = leads.filter(item => item.status === 'baru').length;
       const interestedCount = leads.filter(item => item.status === 'tertarik').length;
@@ -1546,12 +1552,6 @@ async function loadAffiliateCenter() {
       nodes.trackerContacted.textContent = contactedCount;
       nodes.trackerFollowUp.textContent = followUpCount;
       nodes.trackerNotInterested.textContent = notInterestedCount;
-      const activitySince = new Date(); activitySince.setDate(activitySince.getDate() - 30);
-      const activityResponse = await fetch(SUPABASE_URL + '/rest/v1/lead_activities?select=id,activity_type,created_at&created_at=gte.' + encodeURIComponent(activitySince.toISOString()) + '&order=created_at.desc', {
-        headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token }
-      });
-      const recentActivities = await activityResponse.json();
-      if (!activityResponse.ok) throw new Error(recentActivities.message || 'Gagal memuat aktivitas prospek.');
       nodes.trackerActivities30.textContent = recentActivities.length;
       nodes.trackerWhatsApp30.textContent = recentActivities.filter(activity => activity.activity_type === 'whatsapp_opened').length;
 
