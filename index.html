@@ -532,32 +532,21 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
   const SUPABASE_URL = 'https://slygdkibtwgepjxsndjo.supabase.co';
   const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
 
-  async function loadAdminMembers() {
+  let adminMembersCache = null;
+  let adminMembersCacheToken = null;
+  let adminMembersCacheTime = 0;
+
+  async function loadAdminMembers(forceRefresh = false) {
     const message = document.getElementById('adminMembersMessage');
     const body = document.querySelector('#adminMembersTable tbody');
     if (!message || !body) return;
     const token = sessionStorage.getItem('dcv_access_token');
     if (!token) { message.textContent = 'Sesi Super Admin tidak ditemukan. Silakan login kembali.'; return; }
-    message.textContent = 'Mengambil data member dari Supabase...';
-    body.replaceChildren();
-    const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
-    try {
-      const requests = [
-  fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email,created_at&order=created_at.desc', { headers }),
-  fetch(SUPABASE_URL + '/rest/v1/member_memberships?select=member_id,membership_type,premium_expires_at', { headers }),
-  fetch(SUPABASE_URL + '/rest/v1/super_admins?select=user_id', { headers })
-];
-      const responses = await Promise.all(requests);
-      const payloads = await Promise.all(responses.map(async response => {
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.message || data.error || 'Permintaan database gagal (' + response.status + ').');
-        return data;
-      }));
-      const memberships = new Map((payloads[1] || []).map(item => [item.member_id, item]));
-      const adminIds = new Set((payloads[2] || []).map(admin => admin.user_id));
-const rows = (payloads[0] || []).filter(member => !adminIds.has(member.id));
+
+    const renderMembers = rows => {
+      body.replaceChildren();
       rows.forEach(member => {
-        const membership = memberships.get(member.id);
+        const membership = member.membership;
         const isPremiumActive = membership && membership.membership_type === 'premium' && membership.premium_expires_at && new Date(membership.premium_expires_at) > new Date();
         const tr = document.createElement('tr');
         const values = [member.full_name || '—', member.email || '—', isPremiumActive ? 'Premium Aktif' : 'Gratis / Kedaluwarsa', membership && membership.premium_expires_at ? new Date(membership.premium_expires_at).toLocaleDateString('id-ID') : '—', member.created_at ? new Date(member.created_at).toLocaleDateString('id-ID') : '—'];
@@ -567,6 +556,36 @@ const rows = (payloads[0] || []).filter(member => !adminIds.has(member.id));
       });
       message.textContent = 'Berhasil memuat ' + rows.length + ' profil member.';
       filterAdminMembers();
+    };
+
+    const cacheIsFresh = adminMembersCache && adminMembersCacheToken === token && (Date.now() - adminMembersCacheTime < 60000);
+    if (!forceRefresh && cacheIsFresh) {
+      renderMembers(adminMembersCache);
+      return;
+    }
+
+    message.textContent = 'Mengambil data member dari Supabase...';
+    body.replaceChildren();
+    const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
+    try {
+      const requests = [
+        fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email,created_at&order=created_at.desc', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/member_memberships?select=member_id,membership_type,premium_expires_at', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/super_admins?select=user_id', { headers })
+      ];
+      const responses = await Promise.all(requests);
+      const payloads = await Promise.all(responses.map(async response => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || data.error || 'Permintaan database gagal (' + response.status + ').');
+        return data;
+      }));
+      const memberships = new Map((payloads[1] || []).map(item => [item.member_id, item]));
+      const adminIds = new Set((payloads[2] || []).map(admin => admin.user_id));
+      const rows = (payloads[0] || []).filter(member => !adminIds.has(member.id)).map(member => ({ ...member, membership: memberships.get(member.id) || null }));
+      adminMembersCache = rows;
+      adminMembersCacheToken = token;
+      adminMembersCacheTime = Date.now();
+      renderMembers(rows);
     } catch (error) {
       message.textContent = 'Gagal memuat data: ' + (error.message || 'Periksa koneksi dan kebijakan RLS Supabase.');
     }
@@ -665,7 +684,7 @@ const rows = (payloads[0] || []).filter(member => !adminIds.has(member.id));
       document.getElementById('premiumPaymentReference').value = '';
       document.getElementById('premiumAmount').value = '';
       document.getElementById('premiumNotes').value = '';
-      await loadAdminMembers();
+      await loadAdminMembers(true);
     } catch (error) {
       message.textContent = 'Gagal: ' + (error.message || 'Periksa koneksi Supabase.');
     } finally {
@@ -681,7 +700,7 @@ const rows = (payloads[0] || []).filter(member => !adminIds.has(member.id));
   window.loadAdminMembers = loadAdminMembers;
   window.loadActivationMembers = loadActivationMembers;
   document.querySelector('.admin-sidebar a[href="#activation"]').addEventListener('click', loadActivationMembers);
-  document.getElementById('refreshAdminMembers').addEventListener('click', loadAdminMembers);
+  document.getElementById('refreshAdminMembers').addEventListener('click', () => loadAdminMembers(true));
   document.getElementById('adminMemberSearch').addEventListener('input', filterAdminMembers);
 
   function showLoginError(message) {
