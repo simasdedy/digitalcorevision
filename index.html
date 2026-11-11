@@ -572,44 +572,70 @@ const rows = (payloads[0] || []).filter(member => !adminIds.has(member.id));
     }
   }
 
-  async function loadActivationMembers() {
+  let activationMembersCache = null;
+  let activationMembersToken = null;
+  let activationMembersPromise = null;
+
+  async function loadActivationMembers(forceRefresh = false) {
     const select = document.getElementById('premiumMemberSelect');
     if (!select) return;
     const token = sessionStorage.getItem('dcv_access_token');
-    if (!token) return;
-    select.innerHTML = '<option value="">Memuat daftar member...</option>';
-    try {
-      const response = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email&order=full_name.asc', { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token } });
-      const rows = await response.json();
-if (!response.ok) throw new Error(rows.message || 'Gagal mengambil daftar member.');
-
-const adminResponse = await fetch(
-  SUPABASE_URL + '/rest/v1/super_admins?select=user_id',
-  {
-    headers: {
-      apikey: SUPABASE_PUBLISHABLE_KEY,
-      Authorization: 'Bearer ' + token
+    if (!token) {
+      select.innerHTML = '<option value="">Sesi Super Admin berakhir. Login kembali.</option>';
+      return;
     }
-  }
-);
 
-const admins = await adminResponse.json();
-if (!adminResponse.ok) throw new Error('Gagal memeriksa akun Super Admin.');
-
-const adminIds = new Set(admins.map(admin => admin.user_id));
-const memberRows = rows.filter(member => !adminIds.has(member.id));
-
-select.innerHTML = '<option value="">-- Pilih member --</option>';
-memberRows.forEach(member => {
+    const renderMembers = members => {
+      select.replaceChildren();
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = members.length ? '-- Pilih member --' : 'Belum ada member';
+      select.appendChild(placeholder);
+      members.forEach(member => {
         const option = document.createElement('option');
         option.value = member.id;
         option.textContent = (member.full_name || 'Tanpa nama') + ' — ' + (member.email || member.id);
         select.appendChild(option);
       });
-      if (!rows.length) select.innerHTML = '<option value="">Belum ada member</option>';
+    };
+
+    if (!forceRefresh && activationMembersCache && activationMembersToken === token) {
+      renderMembers(activationMembersCache);
+      return;
+    }
+    if (!forceRefresh && activationMembersPromise && activationMembersToken === token) {
+      select.innerHTML = '<option value="">Memuat daftar member...</option>';
+      try { renderMembers(await activationMembersPromise); } catch (error) {}
+      return;
+    }
+
+    select.innerHTML = '<option value="">Memuat daftar member...</option>';
+    const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
+    activationMembersToken = token;
+    activationMembersPromise = (async () => {
+      const [profilesResponse, adminsResponse] = await Promise.all([
+        fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email&order=full_name.asc', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/super_admins?select=user_id', { headers })
+      ]);
+      const [profiles, admins] = await Promise.all([profilesResponse.json(), adminsResponse.json()]);
+      if (!profilesResponse.ok) throw new Error(profiles.message || 'Gagal mengambil profil member (' + profilesResponse.status + ').');
+      if (!adminsResponse.ok) throw new Error(admins.message || 'Gagal memeriksa akun Super Admin (' + adminsResponse.status + ').');
+      const adminIds = new Set((admins || []).map(admin => admin.user_id));
+      return (profiles || []).filter(member => !adminIds.has(member.id));
+    })();
+
+    try {
+      const members = await activationMembersPromise;
+      activationMembersCache = members;
+      renderMembers(members);
+      const message = document.getElementById('premiumActivationMessage');
+      if (message) message.textContent = '';
     } catch (error) {
-      select.innerHTML = '<option value="">Gagal memuat member</option>';
-      document.getElementById('premiumActivationMessage').textContent = error.message;
+      activationMembersCache = null;
+      activationMembersPromise = null;
+      select.innerHTML = '<option value="">Gagal memuat member — klik Aktivasi Premium lagi</option>';
+      const message = document.getElementById('premiumActivationMessage');
+      if (message) message.textContent = error.message || 'Periksa koneksi Supabase.';
     }
   }
 
