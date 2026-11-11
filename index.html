@@ -238,6 +238,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
         <div class="member-shortcuts"><div class="shortcut"><strong>Konten Pembelajaran</strong><span>Akses materi dan panduan bisnis digital.</span></div><div class="shortcut"><strong>Training</strong><span>Pelajari strategi membangun network.</span></div><div class="shortcut"><strong>Data Leads</strong><span>Kelola prospek dan aktivitas follow-up.</span></div></div>
         <div class="card" id="dashboardFollowUpCard" style="margin-top:20px">
           <div class="page-head"><div><h2 style="margin:0">Pengingat Follow-Up</h2><div class="subtitle">Pantau prospek yang perlu dihubungi hari ini dan berikutnya.</div></div><button class="secondary-btn" type="button" onclick="navigate('leads')">Buka Data Leads</button></div>
+          <div id="dashFollowAlert" role="status" style="display:none;margin:12px 0;padding:12px 14px;border:1px solid #fecaca;border-left:4px solid #dc2626;border-radius:10px;background:#fff7f7;color:#991b1b;font-size:13px;font-weight:600"></div>
           <div class="cards" style="margin:14px 0">
             <div class="card"><div class="metric-label">Terlambat</div><div class="metric-value" id="dashFollowOverdue">—</div></div>
             <div class="card"><div class="metric-label">Hari Ini</div><div class="metric-value" id="dashFollowToday">—</div></div>
@@ -1535,6 +1536,26 @@ async function loadAffiliateCenter() {
       nodes.dashFollowOverdue.textContent = overdue.length;
       nodes.dashFollowToday.textContent = today.length;
       nodes.dashFollowTomorrow.textContent = tomorrow.length;
+      const alertBox = document.getElementById('dashFollowAlert');
+      if (alertBox) {
+        const urgentCount = overdue.length + today.length;
+        if (urgentCount > 0) {
+          alertBox.style.display = 'block';
+          alertBox.style.borderColor = overdue.length ? '#fecaca' : '#fde68a';
+          alertBox.style.borderLeftColor = overdue.length ? '#dc2626' : '#d97706';
+          alertBox.style.background = overdue.length ? '#fff7f7' : '#fffbeb';
+          alertBox.style.color = overdue.length ? '#991b1b' : '#92400e';
+          alertBox.textContent = overdue.length
+            ? 'Perlu perhatian: ' + overdue.length + ' prospek melewati jadwal follow-up' + (today.length ? ' dan ' + today.length + ' prospek harus dihubungi hari ini.' : '. Segera tindak lanjuti prospek yang terlambat.')
+            : 'Pengingat hari ini: ada ' + today.length + ' prospek yang perlu dihubungi hari ini.';
+        } else {
+          alertBox.style.display = 'none';
+          alertBox.textContent = '';
+        }
+      }
+      overdue.sort((a,b) => new Date(a.follow_up_at) - new Date(b.follow_up_at));
+      today.sort((a,b) => new Date(a.follow_up_at) - new Date(b.follow_up_at));
+      tomorrow.sort((a,b) => new Date(a.follow_up_at) - new Date(b.follow_up_at));
       function renderList(target, items, emptyText) {
         target.replaceChildren();
         if (!items.length) { target.textContent = emptyText; return; }
