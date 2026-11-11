@@ -866,6 +866,25 @@ enterMemberApp(
     sessionStorage.setItem('dcv_member_email', email || 'Member');
     document.getElementById('signedInEmail').textContent = email || 'Member';
     setMemberWelcomeName(fullName || (email ? email.split('@')[0] : ''));
+    // Ambil nama lengkap dari tabel profiles agar sapaan dashboard memakai nama profil member.
+    (async function loadWelcomeProfileName() {
+      try {
+        const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
+        const userResponse = await fetch(SUPABASE_URL + '/auth/v1/user', { headers });
+        const user = await userResponse.json();
+        if (!userResponse.ok || !user.id) return;
+        const profileResponse = await fetch(
+          SUPABASE_URL + '/rest/v1/profiles?select=full_name&id=eq.' + encodeURIComponent(user.id),
+          { headers }
+        );
+        const profiles = await profileResponse.json();
+        if (profileResponse.ok && profiles.length && profiles[0].full_name) {
+          setMemberWelcomeName(profiles[0].full_name);
+        }
+      } catch (error) {
+        console.warn('Nama profil dashboard belum dapat dimuat:', error);
+      }
+    })();
     loginError.classList.remove('show');
     loginScreen.style.display = 'none';
     document.body.classList.remove('admin-authenticated');
