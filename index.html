@@ -471,7 +471,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
             </div>
             <div class="admin-panel-card" id="admin-members"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div><h3 style="font-size:17px;margin:0 0 5px">Data Member</h3><p style="font-size:11px;color:#6b7280;margin:0">Daftar profil dan status membership dari Supabase.</p></div><button class="secondary-btn" type="button" id="refreshAdminMembers">↻ Muat Ulang</button></div><div class="admin-kpis" id="adminMembershipMetrics" style="margin:12px 0 14px"><div class="admin-kpi"><strong id="adminMetricTotal">—</strong><span>Total Member</span></div><div class="admin-kpi"><strong id="adminMetricFree">—</strong><span>Gratis</span></div><div class="admin-kpi"><strong id="adminMetricPremium">—</strong><span>Premium Aktif</span></div><div class="admin-kpi"><strong id="adminMetricExpired">—</strong><span>Premium Kedaluwarsa</span></div></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"><input id="adminMemberSearch" class="field" style="flex:1;min-width:220px;padding:10px 12px;margin:0;border:1px solid #d1d5db;border-radius:8px" placeholder="Cari nama atau email member..."><select id="adminMembershipFilter" class="field" style="width:min(230px,100%);padding:10px 12px;margin:0;border:1px solid #d1d5db;border-radius:8px"><option value="all">Semua status</option><option value="free">Gratis</option><option value="premium-active">Premium Aktif</option><option value="premium-expired">Premium Kedaluwarsa</option></select></div><div id="adminMembersMessage" style="font-size:12px;color:#64748b;padding:12px 0">Data member belum dimuat.</div><div style="overflow-x:auto"><table class="admin-table" id="adminMembersTable"><thead><tr><th>Nama</th><th>Email</th><th>Membership</th><th>Masa Premium</th><th>Tanggal Daftar</th></tr></thead><tbody></tbody></table></div></div>
             <div class="admin-panel-card" id="activation"><h3 style="font-size:18px;margin:0 0 6px">Aktivasi Premium</h3><p style="font-size:11px;color:#6b7280;margin:0 0 16px">Aktifkan atau perpanjang Premium setelah pembayaran diverifikasi.</p><form id="premiumActivationForm"><div class="field"><label for="premiumMemberSelect">Pilih member</label><select id="premiumMemberSelect" required><option value="">Memuat daftar member...</option></select></div><div class="form-row"><div class="field"><label for="premiumDuration">Masa aktif (hari)</label><input id="premiumDuration" type="number" min="1" step="1" value="30" required></div><div class="field"><label for="premiumAmount">Nominal pembayaran (Rp, opsional)</label><input id="premiumAmount" type="number" min="0" step="1" placeholder="Contoh: 150000"></div></div><div class="field"><label for="premiumPaymentReference">Referensi pembayaran (opsional)</label><input id="premiumPaymentReference" maxlength="200" placeholder="Contoh: transfer 02/11/2026"></div><div class="field"><label for="premiumNotes">Catatan (opsional)</label><input id="premiumNotes" maxlength="500" placeholder="Catatan verifikasi pembayaran"></div><button class="primary-btn" id="premiumActivationButton" type="submit">Aktifkan Premium</button><span id="premiumActivationMessage" style="font-size:11px;color:#64748b;margin-left:10px" role="status"></span></form><p style="font-size:10px;color:#9ca3af;margin:14px 0 0">Durasi fleksibel. Default 30 hari; perpanjangan sebelum masa aktif habis akan menambahkan durasi dari tanggal kedaluwarsa sebelumnya.</p></div>
-            <div class="admin-panel-card" id="dashboardDisplaySettings"><h3 style="font-size:16px;margin:0 0 8px">Pengaturan Tampilan Dashboard Member</h3><p style="font-size:11px;color:#6b7280;margin:0 0 14px">Ubah teks sambutan dan banner yang dilihat member pada halaman Dashboard.</p><div class="field"><label>Teks label banner</label><input id="bannerEyebrowInput" value="DigitalCoreVision"></div><div class="field"><label>Judul banner</label><input id="bannerTitleInput" value="ESKAYVIE"></div><div class="field"><label>Deskripsi banner</label><input id="bannerDescriptionInput" value="Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja"></div><button class="primary-btn" type="button" onclick="saveDashboardDisplaySettings()">Simpan Pengaturan Tampilan</button><p style="font-size:10px;color:#9ca3af;margin:12px 0 0">Untuk tahap preview, pengaturan tersimpan di browser ini. Penyimpanan ke database agar berlaku untuk semua member akan dihubungkan pada tahap integrasi berikutnya.</p></div>
+            <div class="admin-panel-card" id="history"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap"><div><h3 style="font-size:18px;margin:0 0 6px">Riwayat Membership</h3><p style="font-size:11px;color:#6b7280;margin:0 0 14px">Catatan aktivasi, perpanjangan, dan penyesuaian Premium yang diverifikasi Super Admin.</p></div><button class="secondary-btn" type="button" id="refreshMembershipHistory">↻ Muat Ulang Riwayat</button></div><div class="admin-kpis" style="margin:8px 0 14px"><div class="admin-kpi"><strong id="historyTotal">—</strong><span>Total Catatan</span></div><div class="admin-kpi"><strong id="historyActivations">—</strong><span>Aktivasi</span></div><div class="admin-kpi"><strong id="historyRenewals">—</strong><span>Perpanjangan</span></div><div class="admin-kpi"><strong id="historyRevenue">—</strong><span>Total Pembayaran Tercatat</span></div></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"><input id="membershipHistorySearch" class="field" style="flex:1;min-width:220px;padding:10px 12px;margin:0" placeholder="Cari nama, email, atau referensi pembayaran..."><select id="membershipHistoryFilter" class="field" style="width:min(220px,100%);padding:10px 12px;margin:0"><option value="all">Semua aktivitas</option><option value="activation">Aktivasi</option><option value="renewal">Perpanjangan</option><option value="adjustment">Penyesuaian</option></select></div><div id="membershipHistoryMessage" style="font-size:12px;color:#64748b;padding:8px 0">Riwayat belum dimuat.</div><div style="overflow-x:auto"><table class="admin-table" id="membershipHistoryTable"><thead><tr><th>Member</th><th>Aktivitas</th><th>Durasi</th><th>Masa Berlaku Baru</th><th>Pembayaran</th><th>Referensi</th><th>Diverifikasi</th></tr></thead><tbody></tbody></table></div></div><div class="admin-panel-card" id="dashboardDisplaySettings"><h3 style="font-size:16px;margin:0 0 8px">Pengaturan Tampilan Dashboard Member</h3><p style="font-size:11px;color:#6b7280;margin:0 0 14px">Ubah teks sambutan dan banner yang dilihat member pada halaman Dashboard.</p><div class="field"><label>Teks label banner</label><input id="bannerEyebrowInput" value="DigitalCoreVision"></div><div class="field"><label>Judul banner</label><input id="bannerTitleInput" value="ESKAYVIE"></div><div class="field"><label>Deskripsi banner</label><input id="bannerDescriptionInput" value="Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja"></div><button class="primary-btn" type="button" onclick="saveDashboardDisplaySettings()">Simpan Pengaturan Tampilan</button><p style="font-size:10px;color:#9ca3af;margin:12px 0 0">Untuk tahap preview, pengaturan tersimpan di browser ini. Penyimpanan ke database agar berlaku untuk semua member akan dihubungkan pada tahap integrasi berikutnya.</p></div>
         <div class="admin-panel-card" style="margin-top:18px">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
             <div><div class="section-title" style="margin:0">Manajemen Sertifikat Training</div><p id="trainingCertificatesAdminMessage" class="section-sub">Memuat data sertifikat...</p></div>
@@ -757,6 +757,66 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
     }
   });
 
+  let membershipHistoryCache = null;
+  async function loadMembershipHistory(forceRefresh = false) {
+    const message = document.getElementById('membershipHistoryMessage');
+    const body = document.querySelector('#membershipHistoryTable tbody');
+    if (!message || !body) return;
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token) { message.textContent = 'Sesi Super Admin berakhir. Silakan login kembali.'; return; }
+    if (membershipHistoryCache && !forceRefresh) { renderMembershipHistory(membershipHistoryCache); return; }
+    message.textContent = 'Mengambil riwayat membership dari Supabase...'; body.replaceChildren();
+    const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
+    try {
+      const [hr, pr] = await Promise.all([
+        fetch(SUPABASE_URL + '/rest/v1/membership_history?select=id,member_id,event_type,previous_expires_at,new_expires_at,duration_days,payment_reference,amount,verified_by,verified_at,notes,created_at&order=verified_at.desc', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email', { headers })
+      ]);
+      const [history, profiles] = await Promise.all([hr.json(), pr.json()]);
+      if (!hr.ok) throw new Error(history.message || history.error || 'Gagal mengambil riwayat (' + hr.status + ').');
+      if (!pr.ok) throw new Error(profiles.message || profiles.error || 'Gagal mengambil profil member (' + pr.status + ').');
+      const map = new Map((profiles || []).map(p => [p.id, p]));
+      membershipHistoryCache = (history || []).map(item => ({ ...item, profile: map.get(item.member_id) || null }));
+      renderMembershipHistory(membershipHistoryCache);
+    } catch (error) { message.textContent = 'Gagal memuat riwayat: ' + (error.message || 'Periksa koneksi dan kebijakan RLS Supabase.'); }
+  }
+  function renderMembershipHistory(rows) {
+    const body = document.querySelector('#membershipHistoryTable tbody');
+    const message = document.getElementById('membershipHistoryMessage');
+    if (!body || !message) return;
+    body.replaceChildren();
+    let activations = 0, renewals = 0, revenue = 0;
+    rows.forEach(item => {
+      if (item.event_type === 'activation') activations++;
+      if (item.event_type === 'renewal') renewals++;
+      if (item.amount !== null && item.amount !== undefined) revenue += Number(item.amount) || 0;
+      const p = item.profile || {};
+      const event = item.event_type === 'activation' ? 'Aktivasi' : item.event_type === 'renewal' ? 'Perpanjangan' : item.event_type === 'adjustment' ? 'Penyesuaian' : (item.event_type || '—');
+      const expiry = item.new_expires_at ? new Date(item.new_expires_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+      const verified = item.verified_at ? new Date(item.verified_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}) : '—';
+      const amount = item.amount === null || item.amount === undefined ? '—' : 'Rp ' + Number(item.amount).toLocaleString('id-ID');
+      const values = [(p.full_name || 'Tanpa nama') + ' — ' + (p.email || item.member_id), event, (item.duration_days || 0) + ' hari', expiry, amount, item.payment_reference || '—', verified];
+      const tr = document.createElement('tr');
+      values.forEach(value => { const td = document.createElement('td'); td.textContent = value; tr.appendChild(td); });
+      tr.dataset.event = item.event_type || '';
+      tr.dataset.search = [p.full_name,p.email,item.payment_reference,item.notes].filter(Boolean).join(' ').toLowerCase();
+      body.appendChild(tr);
+    });
+    document.getElementById('historyTotal').textContent = rows.length.toLocaleString('id-ID');
+    document.getElementById('historyActivations').textContent = activations.toLocaleString('id-ID');
+    document.getElementById('historyRenewals').textContent = renewals.toLocaleString('id-ID');
+    document.getElementById('historyRevenue').textContent = 'Rp ' + revenue.toLocaleString('id-ID');
+    message.textContent = rows.length ? 'Berhasil memuat ' + rows.length + ' catatan membership.' : 'Belum ada riwayat aktivasi atau perpanjangan.';
+    filterMembershipHistory();
+  }
+  function filterMembershipHistory() {
+    const q = (document.getElementById('membershipHistorySearch')?.value || '').trim().toLowerCase();
+    const type = document.getElementById('membershipHistoryFilter')?.value || 'all';
+    document.querySelectorAll('#membershipHistoryTable tbody tr').forEach(row => {
+      row.style.display = row.dataset.search.includes(q) && (type === 'all' || row.dataset.event === type) ? '' : 'none';
+    });
+  }
+
   function filterAdminMembers() {
     const query = (document.getElementById('adminMemberSearch')?.value || '').trim().toLowerCase();
     const statusFilter = document.getElementById('adminMembershipFilter')?.value || 'all';
@@ -772,6 +832,10 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
   document.getElementById('refreshAdminMembers').addEventListener('click', () => loadAdminMembers(true));
   document.getElementById('adminMemberSearch').addEventListener('input', filterAdminMembers);
   document.getElementById('adminMembershipFilter').addEventListener('change', filterAdminMembers);
+  document.querySelector('.admin-sidebar a[href="#history"]').addEventListener('click', () => loadMembershipHistory(true));
+  document.getElementById('refreshMembershipHistory').addEventListener('click', () => loadMembershipHistory(true));
+  document.getElementById('membershipHistorySearch').addEventListener('input', filterMembershipHistory);
+  document.getElementById('membershipHistoryFilter').addEventListener('change', filterMembershipHistory);
 
   function showLoginError(message) {
     loginError.textContent = message;
