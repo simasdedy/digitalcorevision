@@ -1956,6 +1956,18 @@ async function loadAffiliateCenter() {
       renderMember();
     } catch (e) { el.textContent = 'Gagal memuat materi: ' + e.message; }
   }
+  function youtubeEmbedUrl(raw) {
+    try {
+      const url = new URL(raw);
+      let id = '';
+      if (url.hostname === 'youtu.be' || url.hostname === 'www.youtu.be') id = url.pathname.split('/').filter(Boolean)[0] || '';
+      else if (['youtube.com','www.youtube.com','m.youtube.com'].includes(url.hostname)) {
+        if (url.pathname === '/watch') id = url.searchParams.get('v') || '';
+        else if (/^\/(embed|shorts)\//.test(url.pathname)) id = url.pathname.split('/')[2] || '';
+      }
+      return /^[A-Za-z0-9_-]{11}$/.test(id) ? 'https://www.youtube-nocookie.com/embed/' + id : '';
+    } catch (_) { return ''; }
+  }
   function renderMember() {
     const el = document.getElementById('memberTrainingList'); if (!el) return;
     const filter = document.getElementById('memberTrainingCategory')?.value || '';
@@ -1965,7 +1977,10 @@ async function loadAffiliateCenter() {
       const cat = categories.find(c => c.id === m.category_id);
       const thumb = m.thumbnail_url ? '<img src="' + esc(m.thumbnail_url) + '" alt="" loading="lazy" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px">' : '';
       const label = ({video:'Video',pdf:'PDF',document:'Dokumen',link:'Link'})[m.content_type] || 'Materi';
-      return '<article style="padding:16px 0;border-bottom:1px solid #e5eaf1">' + thumb + '<div class="pill" style="display:inline-block">' + label + (cat ? ' · ' + esc(cat.name) : '') + '</div><h3 style="margin:9px 0 5px">' + esc(m.title) + '</h3><p class="section-sub">' + esc(m.description || 'Materi pembelajaran DIGITALCOREVISION.') + '</p><a class="primary-btn" style="display:inline-block;text-decoration:none;margin-top:8px" href="' + esc(m.content_url) + '" target="_blank" rel="noopener noreferrer">Buka Materi</a></article>';
+      const embed = m.content_type === 'video' ? youtubeEmbedUrl(m.content_url) : '';
+      const player = embed ? '<div style="position:relative;width:100%;max-width:760px;aspect-ratio:16/9;margin:14px 0;border-radius:12px;overflow:hidden;background:#101827"><iframe src="' + embed + '" title="' + esc(m.title) + '" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>' : '';
+      const button = embed ? '' : '<a class="primary-btn" style="display:inline-block;text-decoration:none;margin-top:8px" href="' + esc(m.content_url) + '" target="_blank" rel="noopener noreferrer">Buka Materi</a>';
+      return '<article style="padding:16px 0;border-bottom:1px solid #e5eaf1">' + thumb + '<div class="pill" style="display:inline-block">' + label + (cat ? ' · ' + esc(cat.name) : '') + '</div><h3 style="margin:9px 0 5px">' + esc(m.title) + '</h3><p class="section-sub">' + esc(m.description || 'Materi pembelajaran DIGITALCOREVISION.') + '</p>' + player + button + '</article>';
     }).join('');
   }
   document.getElementById('contentCategoryForm')?.addEventListener('submit', async e => {
