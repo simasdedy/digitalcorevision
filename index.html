@@ -316,6 +316,20 @@ main { max-width:1200px; padding:42px 16px 50px; }
         </div>
         <div class="card" style="margin-top:18px"><div class="section-title">Daftar Materi</div><div id="contentAdminList" class="section-sub">Memuat materi...</div></div>
         <div class="card" style="margin-top:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div class="section-title" style="margin:0">Laporan Training Progress Member</div><button class="secondary-btn" type="button" id="refreshTrainingProgressAdmin">Muat Ulang Progres</button></div><p id="trainingProgressAdminMessage" class="section-sub">Memuat laporan progres...</p><div id="trainingProgressAdminSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"><input id="trainingProgressSearch" type="search" placeholder="Cari nama atau email Member..." aria-label="Cari Member" style="flex:1;min-width:220px"><select id="trainingProgressFilter" aria-label="Filter progres" style="min-width:190px"><option value="all">Semua progres</option><option value="not-started">Belum mulai (0%)</option><option value="in-progress">Sedang belajar (1–99%)</option><option value="completed">Selesai (100%)</option></select></div><div id="trainingProgressAdminList" style="overflow-x:auto"></div></div>
+        <div class="card" style="margin-top:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <div><div class="section-title" style="margin:0">Manajemen Sertifikat Training</div><p id="trainingCertificatesAdminMessage" class="section-sub">Memuat data sertifikat...</p></div>
+            <button class="secondary-btn" type="button" id="refreshTrainingCertificatesAdmin">Muat Ulang Sertifikat</button>
+          </div>
+          <div id="trainingCertificatesAdminSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
+            <input id="trainingCertificatesSearch" type="search" placeholder="Cari nama, email, atau nomor sertifikat..." aria-label="Cari sertifikat" style="flex:1;min-width:240px">
+            <select id="trainingCertificatesFilter" aria-label="Filter status sertifikat" style="min-width:180px">
+              <option value="all">Semua sertifikat</option><option value="active">Valid</option><option value="revoked">Dicabut</option>
+            </select>
+          </div>
+          <div id="trainingCertificatesAdminList" style="overflow-x:auto"></div>
+        </div>
       </section>
       <section class="page" id="profile">
         <div class="page-head"><div><h1>Profil & Pengaturan</h1><div class="subtitle">Informasi administrator dan konfigurasi dasar platform.</div></div></div>
@@ -2037,6 +2051,70 @@ async function loadAffiliateCenter() {
       listEl.innerHTML = '';
     }
   }
+  async function loadTrainingCertificatesAdmin() {
+    const messageEl = document.getElementById('trainingCertificatesAdminMessage');
+    const listEl = document.getElementById('trainingCertificatesAdminList');
+    if (!messageEl || !listEl) return;
+    messageEl.textContent = 'Memuat daftar sertifikat...';
+    try {
+      const results = await Promise.all([
+        api('training_certificates?select=id,user_id,certificate_number,member_name,course_title,issued_at,completion_date,status&order=issued_at.desc'),
+        api('profiles?select=id,email'),
+        api('super_admins?select=user_id')
+      ]);
+      const superAdminIds = new Set((results[2] || []).map(row => row.user_id));
+      const emailByUser = new Map((results[1] || []).map(profile => [profile.id, profile.email || '—']));
+      // Sertifikat akun Super Admin tidak ditampilkan pada daftar sertifikat Member.
+      const certificates = (results[0] || []).filter(cert => !superAdminIds.has(cert.user_id));
+      const counts = {
+        total: certificates.length,
+        active: certificates.filter(cert => cert.status === 'active').length,
+        revoked: certificates.filter(cert => cert.status === 'revoked').length
+      };
+      const summaryEl = document.getElementById('trainingCertificatesAdminSummary');
+      if (summaryEl) summaryEl.innerHTML = [
+        ['Total Sertifikat', counts.total], ['Valid', counts.active], ['Dicabut', counts.revoked]
+      ].map(item => '<div style="background:#f1f5f9;border-radius:10px;padding:10px 14px;min-width:112px"><strong style="display:block;font-size:18px">' + item[1] + '</strong><small style="color:#64748b">' + item[0] + '</small></div>').join('');
+      messageEl.textContent = certificates.length + ' sertifikat Member ditemukan.';
+      const searchEl = document.getElementById('trainingCertificatesSearch');
+      const filterEl = document.getElementById('trainingCertificatesFilter');
+      const dateLabel = value => {
+        if (!value) return '—';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+      };
+      const renderRows = () => {
+        const query = (searchEl?.value || '').trim().toLocaleLowerCase('id-ID');
+        const filter = filterEl?.value || 'all';
+        const filtered = certificates.filter(cert => {
+          const email = emailByUser.get(cert.user_id) || '';
+          const haystack = [cert.member_name, email, cert.certificate_number, cert.course_title].join(' ').toLocaleLowerCase('id-ID');
+          return haystack.includes(query) && (filter === 'all' || cert.status === filter);
+        });
+        listEl.innerHTML = filtered.length
+          ? '<table class="admin-table" style="width:100%;margin-top:12px"><thead><tr><th>Member</th><th>Nomor Sertifikat</th><th>Tanggal Terbit</th><th>Status</th><th>Aksi</th></tr></thead><tbody>' +
+            filtered.map(cert => {
+              const email = emailByUser.get(cert.user_id) || '—';
+              const valid = cert.status === 'active';
+              const verifyUrl = 'verify.html?code=' + encodeURIComponent(cert.certificate_number);
+              return '<tr><td><strong>' + esc(cert.member_name) + '</strong><br><small>' + esc(email) + '</small></td><td><strong>' + esc(cert.certificate_number) + '</strong><br><small>' + esc(cert.course_title || '') + '</small></td><td>' + esc(dateLabel(cert.issued_at)) + '</td><td>' + (valid ? '<span class="status">Valid</span>' : '<span class="status pending">Dicabut</span>') + '</td><td><a class="secondary-btn" href="' + esc(verifyUrl) + '" target="_blank" rel="noopener noreferrer">Verifikasi</a></td></tr>';
+            }).join('') + '</tbody></table>'
+          : '<p class="section-sub">Tidak ada sertifikat yang sesuai dengan pencarian atau filter.</p>';
+      };
+      renderRows();
+      if (searchEl && searchEl.dataset.bound !== 'yes') {
+        searchEl.addEventListener('input', renderRows);
+        searchEl.dataset.bound = 'yes';
+      }
+      if (filterEl && filterEl.dataset.bound !== 'yes') {
+        filterEl.addEventListener('change', renderRows);
+        filterEl.dataset.bound = 'yes';
+      }
+    } catch (e) {
+      messageEl.textContent = 'Daftar sertifikat belum dapat dimuat: ' + e.message;
+      listEl.innerHTML = '';
+    }
+  }
   async function loadAdmin(force) {
     message('contentAdminMessage','Memuat data dari Supabase...');
     try {
@@ -2048,9 +2126,11 @@ async function loadAffiliateCenter() {
       fillCategorySelects(); renderCategories(); renderAdminMaterials(); renderMetrics();
       message('contentAdminMessage','Data berhasil dimuat. Materi berstatus Draft belum terlihat oleh member.');
       await loadTrainingProgressAdmin();
+      await loadTrainingCertificatesAdmin();
     } catch (e) { message('contentAdminMessage','Gagal memuat: ' + e.message); }
   }
   document.getElementById('refreshTrainingProgressAdmin')?.addEventListener('click', loadTrainingProgressAdmin);
+  document.getElementById('refreshTrainingCertificatesAdmin')?.addEventListener('click', loadTrainingCertificatesAdmin);
   function currentMemberId() {
     try {
       const parts = (token() || '').split('.');
