@@ -306,7 +306,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
               </div>
               <div class="field"><label for="trainingUrl">URL materi *</label><input id="trainingUrl" type="url" required maxlength="2000" placeholder="https://..."></div>
               <div class="field"><label for="trainingThumbnail">URL thumbnail (opsional)</label><input id="trainingThumbnail" type="url" maxlength="2000" placeholder="https://..."></div>
-              <button class="primary-btn" type="submit">Simpan Materi</button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="primary-btn" id="saveTrainingContentButton" type="submit">Simpan Materi</button><button class="secondary-btn" id="cancelTrainingEditButton" type="button" hidden>Batal Edit</button></div>
             </form>
             <p id="contentAdminMessage" class="section-sub" role="status" style="margin-top:10px"></p>
           </div>
@@ -1890,7 +1890,7 @@ async function loadAffiliateCenter() {
 (function () {
   const BASE = 'https://slygdkibtwgepjxsndjo.supabase.co';
   const KEY = 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
-  let categories = [], materials = [];
+  let categories = [], materials = [], editingMaterialId = null;
   const token = () => sessionStorage.getItem('dcv_access_token');
   const headers = (extra = {}) => ({ apikey: KEY, Authorization: 'Bearer ' + (token() || ''), ...extra });
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -1929,7 +1929,7 @@ async function loadAffiliateCenter() {
     if (!materials.length) { el.textContent = 'Belum ada materi. Tambahkan materi melalui formulir di atas.'; return; }
     el.innerHTML = materials.map(m => {
       const cat = categories.find(c => c.id === m.category_id);
-      return '<div class="plan"><div><strong>' + esc(m.title) + '</strong><small>' + esc(cat ? cat.name : 'Tanpa kategori') + ' · ' + esc(m.content_type.toUpperCase()) + ' · ' + (m.status === 'published' ? 'Dipublikasikan' : 'Draft') + '</small><small>' + esc(m.description || '') + '</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="secondary-btn" href="' + esc(m.content_url) + '" target="_blank" rel="noopener noreferrer">Buka</a><button class="secondary-btn" type="button" data-toggle-material="' + esc(m.id) + '" data-status="' + esc(m.status) + '">' + (m.status === 'published' ? 'Jadikan Draft' : 'Publikasikan') + '</button><button class="secondary-btn" type="button" data-delete-material="' + esc(m.id) + '">Hapus</button></div></div>';
+      return '<div class="plan"><div><strong>' + esc(m.title) + '</strong><small>' + esc(cat ? cat.name : 'Tanpa kategori') + ' · ' + esc(m.content_type.toUpperCase()) + ' · ' + (m.status === 'published' ? 'Dipublikasikan' : 'Draft') + '</small><small>' + esc(m.description || '') + '</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="secondary-btn" href="' + esc(m.content_url) + '" target="_blank" rel="noopener noreferrer">Buka</a><button class="secondary-btn" type="button" data-edit-material="' + esc(m.id) + '">Edit</button><button class="secondary-btn" type="button" data-toggle-material="' + esc(m.id) + '" data-status="' + esc(m.status) + '">' + (m.status === 'published' ? 'Jadikan Draft' : 'Publikasikan') + '</button><button class="secondary-btn" type="button" data-delete-material="' + esc(m.id) + '">Hapus</button></div></div>';
     }).join('');
   }
   async function loadAdmin(force) {
@@ -1990,10 +1990,42 @@ async function loadAffiliateCenter() {
       thumbnail_url:document.getElementById('trainingThumbnail').value.trim() || null
     };
     try {
-      await api('training_contents', { method:'POST', headers:{'Content-Type':'application/json',Prefer:'return=minimal'}, body:JSON.stringify(payload) });
-      e.target.reset(); showToast('Materi berhasil disimpan.'); await loadAdmin(true);
+      if (editingMaterialId) {
+        await api('training_contents?id=eq.' + encodeURIComponent(editingMaterialId), { method:'PATCH', headers:{'Content-Type':'application/json',Prefer:'return=minimal'}, body:JSON.stringify(payload) });
+        resetTrainingEditor(); showToast('Perubahan materi berhasil disimpan.');
+      } else {
+        await api('training_contents', { method:'POST', headers:{'Content-Type':'application/json',Prefer:'return=minimal'}, body:JSON.stringify(payload) });
+        e.target.reset(); showToast('Materi berhasil disimpan.');
+      }
+      await loadAdmin(true);
     } catch (err) { message('contentAdminMessage','Gagal menyimpan materi: ' + err.message); }
   });
+  function resetTrainingEditor() {
+    editingMaterialId = null;
+    document.getElementById('trainingContentForm')?.reset();
+    const save = document.getElementById('saveTrainingContentButton');
+    const cancel = document.getElementById('cancelTrainingEditButton');
+    if (save) save.textContent = 'Simpan Materi';
+    if (cancel) cancel.hidden = true;
+  }
+  function startTrainingEdit(id) {
+    const item = materials.find(m => m.id === id); if (!item) return;
+    editingMaterialId = id;
+    document.getElementById('trainingTitle').value = item.title || '';
+    document.getElementById('trainingCategory').value = item.category_id || '';
+    document.getElementById('trainingDescription').value = item.description || '';
+    document.getElementById('trainingType').value = item.content_type || 'link';
+    document.getElementById('trainingStatus').value = item.status || 'draft';
+    document.getElementById('trainingUrl').value = item.content_url || '';
+    document.getElementById('trainingThumbnail').value = item.thumbnail_url || '';
+    const save = document.getElementById('saveTrainingContentButton');
+    const cancel = document.getElementById('cancelTrainingEditButton');
+    if (save) save.textContent = 'Simpan Perubahan';
+    if (cancel) cancel.hidden = false;
+    document.getElementById('trainingContentForm')?.scrollIntoView({behavior:'smooth',block:'center'});
+    message('contentAdminMessage','Mode edit aktif: ubah data lalu klik Simpan Perubahan.');
+  }
+  document.getElementById('cancelTrainingEditButton')?.addEventListener('click', resetTrainingEditor);
   document.getElementById('contentCategoryList')?.addEventListener('click', async e => {
     const btn = e.target.closest('[data-delete-category]'); if (!btn) return;
     if (!confirm('Hapus kategori ini? Materi terkait tetap tersimpan tanpa kategori.')) return;
@@ -2003,8 +2035,12 @@ async function loadAffiliateCenter() {
   document.getElementById('contentAdminList')?.addEventListener('click', async e => {
     const del = e.target.closest('[data-delete-material]');
     const toggle = e.target.closest('[data-toggle-material]');
+    const edit = e.target.closest('[data-edit-material]');
     try {
-      if (del) {
+      if (edit) {
+        startTrainingEdit(edit.dataset.editMaterial);
+        return;
+      } else if (del) {
         if (!confirm('Hapus materi ini secara permanen?')) return;
         await api('training_contents?id=eq.' + encodeURIComponent(del.dataset.deleteMaterial),{method:'DELETE',headers:{Prefer:'return=minimal'}});
         showToast('Materi dihapus.');
