@@ -139,7 +139,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
 .shortcut strong { display:block; margin-bottom:6px; }
 .shortcut span { color:light-dark(#718198,#a5b6cb); font-size:12px; }
 .admin-shell { display:grid; grid-template-columns:245px minmax(0,1fr); min-height:calc(100vh - 150px); margin:0 -16px -50px; background:#f3f4f6; color:#111827; }
-.admin-sidebar { background:#111827; color:#fff; padding:22px 13px; }
+.admin-sidebar { background:#111827; color:#fff; padding:22px 13px; position:sticky; top:76px; height:calc(100vh - 76px); align-self:start; overflow-y:auto; overscroll-behavior:contain; }
 .admin-sidebar h2 { font-size:21px; margin:0 0 22px; }
 .admin-sidebar a { display:flex; align-items:center; gap:11px; padding:10px 12px; margin:3px 0; border-radius:6px; color:#d1d5db; text-decoration:none; font-size:12px; }
 .admin-sidebar a.current,.admin-sidebar a:hover { background:#374151; color:#fff; }
