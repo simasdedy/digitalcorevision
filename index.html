@@ -315,6 +315,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
           </div>
         </div>
         <div class="card" style="margin-top:18px"><div class="section-title">Daftar Materi</div><div id="contentAdminList" class="section-sub">Memuat materi...</div></div>
+        <div class="card" style="margin-top:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div class="section-title" style="margin:0">Laporan Training Progress Member</div><button class="secondary-btn" type="button" id="refreshTrainingProgressAdmin">Muat Ulang Progres</button></div><p id="trainingProgressAdminMessage" class="section-sub">Memuat laporan progres...</p><div id="trainingProgressAdminList" style="overflow-x:auto"></div></div>
       </section>
       <section class="page" id="profile">
         <div class="page-head"><div><h1>Profil & Pengaturan</h1><div class="subtitle">Informasi administrator dan konfigurasi dasar platform.</div></div></div>
@@ -1939,6 +1940,36 @@ async function loadAffiliateCenter() {
       return '<div class="plan"><div><strong>' + esc(m.title) + '</strong><small>' + esc(cat ? cat.name : 'Tanpa kategori') + ' · ' + esc(m.content_type.toUpperCase()) + ' · ' + (m.status === 'published' ? 'Dipublikasikan' : 'Draft') + '</small><small>' + esc(m.description || '') + '</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="secondary-btn" href="' + esc(m.content_url) + '" target="_blank" rel="noopener noreferrer">Buka</a><button class="secondary-btn" type="button" data-edit-material="' + esc(m.id) + '">Edit</button><button class="secondary-btn" type="button" data-toggle-material="' + esc(m.id) + '" data-status="' + esc(m.status) + '">' + (m.status === 'published' ? 'Jadikan Draft' : 'Publikasikan') + '</button><button class="secondary-btn" type="button" data-delete-material="' + esc(m.id) + '">Hapus</button></div></div>';
     }).join('');
   }
+  async function loadTrainingProgressAdmin() {
+    const messageEl = document.getElementById('trainingProgressAdminMessage');
+    const listEl = document.getElementById('trainingProgressAdminList');
+    if (!messageEl || !listEl) return;
+    messageEl.textContent = 'Memuat laporan progres Member...';
+    try {
+      const results = await Promise.all([
+        api('training_progress?select=user_id,training_content_id,is_completed,completed_at&order=completed_at.desc'),
+        api('profiles?select=id,full_name,email&order=full_name.asc')
+      ]);
+      const progressRows = results[0] || [];
+      const profiles = results[1] || [];
+      const published = materials.filter(m => m.status === 'published');
+      const profileMap = new Map(profiles.map(p => [p.id, p]));
+      const memberIds = [...new Set([...profiles.map(p => p.id), ...progressRows.map(p => p.user_id)])];
+      const rows = memberIds.map(id => {
+        const profile = profileMap.get(id) || {};
+        const completedIds = new Set(progressRows.filter(p => p.user_id === id && p.is_completed).map(p => p.training_content_id));
+        const completed = published.filter(m => completedIds.has(m.id)).length;
+        const percent = published.length ? Math.round(completed / published.length * 100) : 0;
+        return {id, name:profile.full_name || 'Member', email:profile.email || '—', completed, percent};
+      }).sort((a,b) => b.percent-a.percent || a.name.localeCompare(b.name));
+      messageEl.textContent = rows.length + ' Member · ' + published.length + ' materi dipublikasikan · ' + progressRows.filter(p=>p.is_completed).length + ' catatan penyelesaian.';
+      if (!rows.length) { listEl.innerHTML = '<p class="section-sub">Belum ada data Member untuk ditampilkan.</p>'; return; }
+      listEl.innerHTML = '<table class="admin-table" style="width:100%;margin-top:12px"><thead><tr><th>Member</th><th>Materi Selesai</th><th>Progres</th></tr></thead><tbody>' + rows.map(row => '<tr><td><strong>' + esc(row.name) + '</strong><br><small>' + esc(row.email) + '</small></td><td>' + row.completed + ' / ' + published.length + '</td><td><strong>' + row.percent + '%</strong><div style="height:7px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin-top:6px;min-width:90px"><div style="height:100%;width:' + row.percent + '%;background:#0d9488"></div></div></td></tr>').join('') + '</tbody></table>';
+    } catch (e) {
+      messageEl.textContent = 'Laporan progres belum dapat dimuat: ' + e.message;
+      listEl.innerHTML = '';
+    }
+  }
   async function loadAdmin(force) {
     message('contentAdminMessage','Memuat data dari Supabase...');
     try {
@@ -1949,8 +1980,10 @@ async function loadAffiliateCenter() {
       categories = results[0] || []; materials = results[1] || [];
       fillCategorySelects(); renderCategories(); renderAdminMaterials(); renderMetrics();
       message('contentAdminMessage','Data berhasil dimuat. Materi berstatus Draft belum terlihat oleh member.');
+      await loadTrainingProgressAdmin();
     } catch (e) { message('contentAdminMessage','Gagal memuat: ' + e.message); }
   }
+  document.getElementById('refreshTrainingProgressAdmin')?.addEventListener('click', loadTrainingProgressAdmin);
   function currentMemberId() {
     try {
       const parts = (token() || '').split('.');
