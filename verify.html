@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Verifikasi Sertifikat | DIGITALCOREVISION 2.0</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f1f5f9;color:#17324f;font-family:Arial,sans-serif}
+    .wrap{max-width:680px;margin:56px auto;padding:0 18px}.card{background:#fff;border:1px solid #dbe5ef;border-radius:18px;padding:30px;box-shadow:0 12px 32px #0f172a0c}
+    h1{margin:0 0 8px;font-size:25px}.muted{color:#64748b;line-height:1.6}.form{display:flex;gap:10px;margin-top:22px}
+    input{flex:1;min-width:0;padding:13px;border:1px solid #cbd5e1;border-radius:9px;font-size:15px;text-transform:uppercase}
+    button{border:0;border-radius:9px;padding:13px 18px;background:#12385b;color:white;font-weight:700;cursor:pointer}
+    .result{margin-top:22px;padding:18px;border-radius:12px;background:#f8fafc;display:none}.result.valid{border:1px solid #86efac;background:#f0fdf4}.result.invalid{border:1px solid #fca5a5;background:#fef2f2}
+    .status{font-weight:800;font-size:18px;margin-bottom:12px}.row{padding:9px 0;border-bottom:1px solid #e2e8f0}.row:last-child{border:0}.label{display:block;color:#64748b;font-size:12px;margin-bottom:4px}
+    @media(max-width:520px){.form{flex-direction:column}.card{padding:22px}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <div style="font-weight:800;letter-spacing:3px;color:#0e7490;margin-bottom:22px">DIGITALCOREVISION 2.0</div>
+      <h1>Verifikasi Sertifikat Training</h1>
+      <p class="muted">Masukkan nomor sertifikat atau buka halaman ini melalui QR Code pada sertifikat untuk memeriksa keasliannya.</p>
+      <form id="verifyForm" class="form">
+        <input id="certificateNumber" name="certificate_number" placeholder="Contoh: DCV-TR-2026-XXXXXXXXXXXX" autocomplete="off" required>
+        <button type="submit" id="verifyButton">Verifikasi</button>
+      </form>
+      <div id="verifyMessage" class="muted" role="status" aria-live="polite" style="margin-top:14px"></div>
+      <section id="verifyResult" class="result" aria-live="polite">
+        <div id="verifyStatus" class="status"></div>
+        <div class="row"><span class="label">Nomor sertifikat</span><strong id="resultNumber"></strong></div>
+        <div class="row"><span class="label">Nama Member</span><strong id="resultName"></strong></div>
+        <div class="row"><span class="label">Program</span><strong id="resultCourse"></strong></div>
+        <div class="row"><span class="label">Tanggal penyelesaian</span><strong id="resultDate"></strong></div>
+        <div class="row"><span class="label">Tanggal diterbitkan</span><strong id="resultIssued"></strong></div>
+      </section>
+      <p class="muted" style="font-size:12px;margin-top:22px">Halaman verifikasi resmi DIGITALCOREVISION 2.0.</p>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const SUPABASE_URL = 'https://slygdkibtwgepjxsndjo.supabase.co';
+      const PUBLISHABLE_KEY = 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
+      const form = document.getElementById('verifyForm');
+      const input = document.getElementById('certificateNumber');
+      const button = document.getElementById('verifyButton');
+      const message = document.getElementById('verifyMessage');
+      const result = document.getElementById('verifyResult');
+      const el = id => document.getElementById(id);
+      const dateText = value => value ? new Date(value + (String(value).length === 10 ? 'T00:00:00' : '')).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '—';
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const code = input.value.trim().toUpperCase();
+        if (!code) return;
+        button.disabled = true; button.textContent = 'Memeriksa...';
+        message.textContent = 'Menghubungi database verifikasi...';
+        result.style.display = 'none'; result.className = 'result';
+        try {
+          const response = await fetch(SUPABASE_URL + '/rest/v1/rpc/verify_training_certificate', {
+            method:'POST',
+            headers:{apikey:PUBLISHABLE_KEY,Authorization:'Bearer ' + PUBLISHABLE_KEY,'Content-Type':'application/json'},
+            body:JSON.stringify({p_certificate_number:code})
+          });
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.message || data.details || 'Verifikasi tidak dapat diproses.');
+          const certificate = Array.isArray(data) ? data[0] : data;
+          if (!certificate) {
+            result.className = 'result invalid'; result.style.display = 'block';
+            el('verifyStatus').textContent = '✕ SERTIFIKAT TIDAK DITEMUKAN';
+            ['resultNumber','resultName','resultCourse','resultDate','resultIssued'].forEach(id => el(id).textContent = '—');
+            message.textContent = 'Nomor sertifikat tidak terdaftar pada database resmi.';
+            return;
+          }
+          const valid = certificate.verification_status === 'VALID';
+          result.className = 'result ' + (valid ? 'valid' : 'invalid'); result.style.display = 'block';
+          el('verifyStatus').textContent = valid ? '✓ SERTIFIKAT VALID' : '✕ SERTIFIKAT DICABUT';
+          el('resultNumber').textContent = certificate.certificate_number || '—';
+          el('resultName').textContent = certificate.member_name || '—';
+          el('resultCourse').textContent = certificate.course_title || '—';
+          el('resultDate').textContent = dateText(certificate.completion_date);
+          el('resultIssued').textContent = dateText(certificate.issued_at);
+          message.textContent = valid ? 'Sertifikat ditemukan dan tercatat aktif pada database.' : 'Sertifikat tercatat telah dicabut.';
+        } catch (error) {
+          message.textContent = 'Gagal melakukan verifikasi: ' + error.message + '. Pastikan konfigurasi database sudah diterapkan.';
+        } finally {
+          button.disabled = false; button.textContent = 'Verifikasi';
+        }
+      });
+      const initialCode = new URLSearchParams(location.search).get('code');
+      if (initialCode) { input.value = initialCode; form.requestSubmit(); }
+    })();
+  </script>
+</body>
+</html>
