@@ -1948,13 +1948,19 @@ async function loadAffiliateCenter() {
     try {
       const results = await Promise.all([
         api('training_progress?select=user_id,training_content_id,is_completed,completed_at&order=completed_at.desc'),
-        api('profiles?select=id,full_name,email&order=full_name.asc')
+        api('profiles?select=id,full_name,email&order=full_name.asc'),
+        api('super_admins?select=user_id')
       ]);
-      const progressRows = results[0] || [];
-      const profiles = results[1] || [];
+      const allProgressRows = results[0] || [];
+      const allProfiles = results[1] || [];
+      const superAdminIds = new Set((results[2] || []).map(admin => admin.user_id));
+      // Laporan ini khusus Member; akun Super Admin tidak boleh dihitung.
+      const profiles = allProfiles.filter(profile => !superAdminIds.has(profile.id));
+      const memberIdSet = new Set(profiles.map(profile => profile.id));
+      const progressRows = allProgressRows.filter(progress => memberIdSet.has(progress.user_id) && !superAdminIds.has(progress.user_id));
       const published = materials.filter(m => m.status === 'published');
       const profileMap = new Map(profiles.map(p => [p.id, p]));
-      const memberIds = [...new Set([...profiles.map(p => p.id), ...progressRows.map(p => p.user_id)])];
+      const memberIds = [...memberIdSet];
       const rows = memberIds.map(id => {
         const profile = profileMap.get(id) || {};
         const completedIds = new Set(progressRows.filter(p => p.user_id === id && p.is_completed).map(p => p.training_content_id));
