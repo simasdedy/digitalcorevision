@@ -315,7 +315,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
           </div>
         </div>
         <div class="card" style="margin-top:18px"><div class="section-title">Daftar Materi</div><div id="contentAdminList" class="section-sub">Memuat materi...</div></div>
-        <div class="card" style="margin-top:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div class="section-title" style="margin:0">Laporan Training Progress Member</div><button class="secondary-btn" type="button" id="refreshTrainingProgressAdmin">Muat Ulang Progres</button></div><p id="trainingProgressAdminMessage" class="section-sub">Memuat laporan progres...</p><div id="trainingProgressAdminList" style="overflow-x:auto"></div></div>
+        <div class="card" style="margin-top:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div class="section-title" style="margin:0">Laporan Training Progress Member</div><button class="secondary-btn" type="button" id="refreshTrainingProgressAdmin">Muat Ulang Progres</button></div><p id="trainingProgressAdminMessage" class="section-sub">Memuat laporan progres...</p><div id="trainingProgressAdminSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"><input id="trainingProgressSearch" type="search" placeholder="Cari nama atau email Member..." aria-label="Cari Member" style="flex:1;min-width:220px"><select id="trainingProgressFilter" aria-label="Filter progres" style="min-width:190px"><option value="all">Semua progres</option><option value="not-started">Belum mulai (0%)</option><option value="in-progress">Sedang belajar (1–99%)</option><option value="completed">Selesai (100%)</option></select></div><div id="trainingProgressAdminList" style="overflow-x:auto"></div></div>
       </section>
       <section class="page" id="profile">
         <div class="page-head"><div><h1>Profil & Pengaturan</h1><div class="subtitle">Informasi administrator dan konfigurasi dasar platform.</div></div></div>
@@ -1975,16 +1975,51 @@ async function loadAffiliateCenter() {
         const date = new Date(value);
         return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('id-ID', {dateStyle:'medium',timeStyle:'short'});
       };
-      const tableRows = rows.map(row => {
-        const memberProgress = progressRows.filter(p => p.user_id === row.id && p.is_completed);
-        const detailRows = published.map(material => {
-          const record = memberProgress.find(p => p.training_content_id === material.id);
-          const done = !!record;
-          return '<tr><td>' + esc(material.title) + '</td><td>' + (done ? '<span class="status">✓ Selesai</span>' : '<span class="section-sub">Belum selesai</span>') + '</td><td>' + (done ? esc(dateLabel(record.completed_at)) : '—') + '</td></tr>';
+      const summaryEl = document.getElementById('trainingProgressAdminSummary');
+      const searchEl = document.getElementById('trainingProgressSearch');
+      const filterEl = document.getElementById('trainingProgressFilter');
+      const counts = {
+        notStarted: rows.filter(row => row.percent === 0).length,
+        inProgress: rows.filter(row => row.percent > 0 && row.percent < 100).length,
+        completed: rows.filter(row => row.percent === 100).length
+      };
+      if (summaryEl) summaryEl.innerHTML = [
+        ['Total Member', rows.length], ['Belum Mulai', counts.notStarted],
+        ['Sedang Belajar', counts.inProgress], ['Selesai', counts.completed]
+      ].map(item => '<div style="background:#f1f5f9;border-radius:10px;padding:10px 14px;min-width:105px"><strong style="display:block;font-size:18px">' + item[1] + '</strong><small style="color:#64748b">' + item[0] + '</small></div>').join('');
+      const renderRows = () => {
+        const query = (searchEl?.value || '').trim().toLocaleLowerCase('id-ID');
+        const filter = filterEl?.value || 'all';
+        const filtered = rows.filter(row => {
+          const matchesText = (row.name + ' ' + row.email).toLocaleLowerCase('id-ID').includes(query);
+          const matchesStatus = filter === 'all' ||
+            (filter === 'not-started' && row.percent === 0) ||
+            (filter === 'in-progress' && row.percent > 0 && row.percent < 100) ||
+            (filter === 'completed' && row.percent === 100);
+          return matchesText && matchesStatus;
+        });
+        const tableRows = filtered.map(row => {
+          const memberProgress = progressRows.filter(p => p.user_id === row.id && p.is_completed);
+          const detailRows = published.map(material => {
+            const record = memberProgress.find(p => p.training_content_id === material.id);
+            const done = !!record;
+            return '<tr><td>' + esc(material.title) + '</td><td>' + (done ? '<span class="status">✓ Selesai</span>' : '<span class="section-sub">Belum selesai</span>') + '</td><td>' + (done ? esc(dateLabel(record.completed_at)) : '—') + '</td></tr>';
+          }).join('');
+          return '<tr><td><strong>' + esc(row.name) + '</strong><br><small>' + esc(row.email) + '</small></td><td>' + row.completed + ' / ' + published.length + '</td><td><strong>' + row.percent + '%</strong><div style="height:7px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin-top:6px;min-width:90px"><div style="height:100%;width:' + row.percent + '%;background:#0d9488"></div></div></td><td><button type="button" class="secondary-btn" data-training-member-detail="' + esc(row.id) + '">Detail</button></td></tr><tr id="training-detail-' + esc(row.id) + '" hidden><td colspan="4" style="background:#f8fafc;padding:12px"><strong>Rincian materi — ' + esc(row.name) + '</strong><div style="overflow-x:auto"><table style="width:100%;margin-top:8px"><thead><tr><th>Materi</th><th>Status</th><th>Tanggal selesai</th></tr></thead><tbody>' + detailRows + '</tbody></table></div></td></tr>';
         }).join('');
-        return '<tr><td><strong>' + esc(row.name) + '</strong><br><small>' + esc(row.email) + '</small></td><td>' + row.completed + ' / ' + published.length + '</td><td><strong>' + row.percent + '%</strong><div style="height:7px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin-top:6px;min-width:90px"><div style="height:100%;width:' + row.percent + '%;background:#0d9488"></div></div></td><td><button type="button" class="secondary-btn" data-training-member-detail="' + esc(row.id) + '">Detail</button></td></tr><tr id="training-detail-' + esc(row.id) + '" hidden><td colspan="4" style="background:#f8fafc;padding:12px"><strong>Rincian materi — ' + esc(row.name) + '</strong><div style="overflow-x:auto"><table style="width:100%;margin-top:8px"><thead><tr><th>Materi</th><th>Status</th><th>Tanggal selesai</th></tr></thead><tbody>' + detailRows + '</tbody></table></div></td></tr>';
-      }).join('');
-      listEl.innerHTML = '<table class="admin-table" style="width:100%;margin-top:12px"><thead><tr><th>Member</th><th>Materi Selesai</th><th>Progres</th><th>Aksi</th></tr></thead><tbody>' + tableRows + '</tbody></table>';
+        listEl.innerHTML = filtered.length
+          ? '<table class="admin-table" style="width:100%;margin-top:12px"><thead><tr><th>Member</th><th>Materi Selesai</th><th>Progres</th><th>Aksi</th></tr></thead><tbody>' + tableRows + '</tbody></table>'
+          : '<p class="section-sub">Tidak ada Member yang sesuai dengan pencarian atau filter.</p>';
+      };
+      renderRows();
+      if (searchEl && searchEl.dataset.bound !== 'yes') {
+        searchEl.addEventListener('input', renderRows);
+        searchEl.dataset.bound = 'yes';
+      }
+      if (filterEl && filterEl.dataset.bound !== 'yes') {
+        filterEl.addEventListener('change', renderRows);
+        filterEl.dataset.bound = 'yes';
+      }
       if (listEl.dataset.detailHandler !== 'ready') {
         listEl.addEventListener('click', event => {
           const button = event.target.closest('[data-training-member-detail]');
