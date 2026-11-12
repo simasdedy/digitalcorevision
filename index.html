@@ -282,9 +282,36 @@ main { max-width:1200px; padding:42px 16px 50px; }
         <div class="card" style="max-width:720px"><div class="pill" style="display:inline-block">PAKET UTAMA</div><div style="font-size:25px;font-weight:850;margin:14px 0 4px">DigitalCoreVision Membership</div><div class="subtitle">Akses ke fitur platform sesuai kebijakan layanan.</div><div class="plan"><div><strong>Dashboard & profil</strong><small>Ringkasan dan pengaturan akun</small></div><span class="status">Termasuk</span></div><div class="plan"><div><strong>Konten & Academy</strong><small>Materi pembelajaran dan training</small></div><span class="status">Termasuk</span></div><div class="plan"><div><strong>Prospect CRM</strong><small>Pengelolaan prospek dan follow-up</small></div><span class="status">Tahap berikutnya</span></div><div class="plan"><div><strong>AI & WhatsApp Automation</strong><small>Fitur lanjutan dalam roadmap</small></div><span class="status pending">Belum aktif</span></div></div>
       </section>
       <section class="page" id="content">
-        <div class="page-head"><div><h1>Konten & Training</h1><div class="subtitle">Pusat materi pembelajaran untuk seluruh member.</div></div><button class="primary-btn" onclick="showToast('Form tambah materi akan dibuat pada tahap konten.')">＋ Tambah Materi</button></div>
-        <div class="cards"><div class="card"><div class="metric-label">Total Materi</div><div class="metric-value">36</div></div><div class="card"><div class="metric-label">Video</div><div class="metric-value">18</div></div><div class="card"><div class="metric-label">PDF & Dokumen</div><div class="metric-value">12</div></div><div class="card"><div class="metric-label">Modul Training</div><div class="metric-value">6</div></div></div>
-        <div class="card"><div class="section-title">Kategori Materi</div><div class="plan"><div><strong>Fundamental Network Marketing</strong><small>Dasar membangun bisnis dan personal branding</small></div><span class="status">12 materi</span></div><div class="plan"><div><strong>Digital Marketing</strong><small>Konten, media sosial, dan pemasaran digital</small></div><span class="status">9 materi</span></div><div class="plan"><div><strong>Prospecting & Follow-up</strong><small>Komunikasi prospek dan pengelolaan relasi</small></div><span class="status">8 materi</span></div><div class="plan"><div><strong>Leadership & Team Building</strong><small>Pengembangan tim dan kepemimpinan</small></div><span class="status">7 materi</span></div></div>
+        <div class="page-head"><div><h1>Konten & Training</h1><div class="subtitle">Kelola kategori dan materi pembelajaran untuk seluruh member.</div></div><button class="secondary-btn" type="button" onclick="window.loadContentModule(true)">Muat Ulang</button></div>
+        <div class="cards" id="contentMetrics"><div class="card"><div class="metric-label">Total Materi</div><div class="metric-value">—</div></div><div class="card"><div class="metric-label">Video</div><div class="metric-value">—</div></div><div class="card"><div class="metric-label">PDF & Dokumen</div><div class="metric-value">—</div></div><div class="card"><div class="metric-label">Dipublikasikan</div><div class="metric-value">—</div></div></div>
+        <div class="content-grid">
+          <div class="card">
+            <div class="section-title">Tambah Kategori</div>
+            <form id="contentCategoryForm">
+              <div class="field"><label for="contentCategoryName">Nama kategori *</label><input id="contentCategoryName" maxlength="100" required placeholder="Contoh: Fundamental Network Marketing"></div>
+              <div class="field"><label for="contentCategoryDescription">Deskripsi</label><textarea id="contentCategoryDescription" rows="2" maxlength="500" placeholder="Penjelasan singkat kategori"></textarea></div>
+              <button class="primary-btn" type="submit">Simpan Kategori</button>
+            </form>
+            <div class="section-title" style="margin-top:22px">Daftar Kategori</div><div id="contentCategoryList" class="section-sub">Memuat kategori...</div>
+          </div>
+          <div class="card">
+            <div class="section-title">Tambah Materi</div>
+            <form id="trainingContentForm">
+              <div class="field"><label for="trainingTitle">Judul materi *</label><input id="trainingTitle" maxlength="180" required placeholder="Masukkan judul materi"></div>
+              <div class="field"><label for="trainingCategory">Kategori</label><select id="trainingCategory"><option value="">Pilih kategori (opsional)</option></select></div>
+              <div class="field"><label for="trainingDescription">Deskripsi</label><textarea id="trainingDescription" rows="3" maxlength="3000" placeholder="Ringkasan isi materi"></textarea></div>
+              <div class="form-row">
+                <div class="field"><label for="trainingType">Jenis materi *</label><select id="trainingType"><option value="video">Video</option><option value="pdf">PDF</option><option value="document">Dokumen</option><option value="link">Link / Lainnya</option></select></div>
+                <div class="field"><label for="trainingStatus">Status</label><select id="trainingStatus"><option value="draft">Draft</option><option value="published">Publikasikan</option></select></div>
+              </div>
+              <div class="field"><label for="trainingUrl">URL materi *</label><input id="trainingUrl" type="url" required maxlength="2000" placeholder="https://..."></div>
+              <div class="field"><label for="trainingThumbnail">URL thumbnail (opsional)</label><input id="trainingThumbnail" type="url" maxlength="2000" placeholder="https://..."></div>
+              <button class="primary-btn" type="submit">Simpan Materi</button>
+            </form>
+            <p id="contentAdminMessage" class="section-sub" role="status" style="margin-top:10px"></p>
+          </div>
+        </div>
+        <div class="card" style="margin-top:18px"><div class="section-title">Daftar Materi</div><div id="contentAdminList" class="section-sub">Memuat materi...</div></div>
       </section>
       <section class="page" id="profile">
         <div class="page-head"><div><h1>Profil & Pengaturan</h1><div class="subtitle">Informasi administrator dan konfigurasi dasar platform.</div></div></div>
@@ -325,7 +352,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
   </div>
 </div>
       </section>
-      <section class="page" id="training"><div class="page-head"><div><h1>Training</h1><div class="subtitle">Materi training untuk pengembangan bisnis network.</div></div></div><div class="card"><div class="section-title">Program Training</div><p class="section-sub">Materi akan ditampilkan setelah modul training dihubungkan.</p></div></section>
+      <section class="page" id="training"><div class="page-head"><div><h1>Training</h1><div class="subtitle">Materi pembelajaran untuk pengembangan bisnis network.</div><button class="secondary-btn" type="button" onclick="window.loadMemberTraining(true)">Muat Ulang</button></div></div><div class="card"><div class="field"><label for="memberTrainingCategory">Filter kategori</label><select id="memberTrainingCategory"><option value="">Semua kategori</option></select></div><div id="memberTrainingList" class="section-sub">Memuat materi training...</div></div></section>
       <section class="page" id="leads">
         <div class="page-head">
           <div><h1>Data Leads</h1><div class="subtitle">Catat prospek, pantau status, dan kelola tindak lanjut Anda.</div></div>
@@ -456,6 +483,8 @@ function navigate(page) {
   if (page === 'admin' && typeof window.loadAdminMembers === 'function') window.loadAdminMembers();
   if (page === 'leads' && typeof window.loadLeads === 'function') { window.loadLeads(); if (typeof window.loadLeadReport === 'function') window.loadLeadReport(); }
   if (page === 'dashboard' && typeof window.loadDashboardFollowUps === 'function') window.loadDashboardFollowUps();
+  if (page === 'content' && typeof window.loadContentModule === 'function') window.loadContentModule();
+  if (page === 'training' && typeof window.loadMemberTraining === 'function') window.loadMemberTraining();
   window.scrollTo({top:0, behavior:'smooth'});
 }
 document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => navigate(btn.dataset.page)));
@@ -1856,5 +1885,142 @@ async function loadAffiliateCenter() {
 })();
 })();
 </script>
+
+<script>
+(function () {
+  const BASE = 'https://slygdkibtwgepjxsndjo.supabase.co';
+  const KEY = 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
+  let categories = [], materials = [];
+  const token = () => sessionStorage.getItem('dcv_access_token');
+  const headers = (extra = {}) => ({ apikey: KEY, Authorization: 'Bearer ' + (token() || ''), ...extra });
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+  const message = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  async function api(path, options = {}) {
+    if (!token()) throw new Error('Sesi login tidak ditemukan. Silakan login kembali.');
+    const response = await fetch(BASE + '/rest/v1/' + path, { ...options, headers: headers(options.headers || {}) });
+    const raw = await response.text();
+    let data = null; try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = raw; }
+    if (!response.ok) throw new Error((data && (data.message || data.details || data.hint)) || 'Permintaan gagal (' + response.status + ').');
+    return data;
+  }
+  function fillCategorySelects() {
+    const admin = document.getElementById('trainingCategory');
+    const member = document.getElementById('memberTrainingCategory');
+    if (admin) admin.innerHTML = '<option value="">Pilih kategori (opsional)</option>' + categories.map(c => '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>').join('');
+    if (member) {
+      const selected = member.value;
+      member.innerHTML = '<option value="">Semua kategori</option>' + categories.map(c => '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>').join('');
+      member.value = selected;
+    }
+  }
+  function renderMetrics() {
+    const el = document.getElementById('contentMetrics'); if (!el) return;
+    const published = materials.filter(m => m.status === 'published').length;
+    const counts = [materials.length, materials.filter(m => m.content_type === 'video').length, materials.filter(m => ['pdf','document'].includes(m.content_type)).length, published];
+    el.querySelectorAll('.metric-value').forEach((node,i) => node.textContent = counts[i]);
+  }
+  function renderCategories() {
+    const el = document.getElementById('contentCategoryList'); if (!el) return;
+    if (!categories.length) { el.textContent = 'Belum ada kategori. Tambahkan kategori pertama melalui formulir di atas.'; return; }
+    el.innerHTML = categories.map(c => '<div class="plan"><div><strong>' + esc(c.name) + '</strong><small>' + esc(c.description || 'Tanpa deskripsi') + '</small></div><button class="secondary-btn" type="button" data-delete-category="' + esc(c.id) + '">Hapus</button></div>').join('');
+  }
+  function renderAdminMaterials() {
+    const el = document.getElementById('contentAdminList'); if (!el) return;
+    if (!materials.length) { el.textContent = 'Belum ada materi. Tambahkan materi melalui formulir di atas.'; return; }
+    el.innerHTML = materials.map(m => {
+      const cat = categories.find(c => c.id === m.category_id);
+      return '<div class="plan"><div><strong>' + esc(m.title) + '</strong><small>' + esc(cat ? cat.name : 'Tanpa kategori') + ' · ' + esc(m.content_type.toUpperCase()) + ' · ' + (m.status === 'published' ? 'Dipublikasikan' : 'Draft') + '</small><small>' + esc(m.description || '') + '</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="secondary-btn" href="' + esc(m.content_url) + '" target="_blank" rel="noopener noreferrer">Buka</a><button class="secondary-btn" type="button" data-toggle-material="' + esc(m.id) + '" data-status="' + esc(m.status) + '">' + (m.status === 'published' ? 'Jadikan Draft' : 'Publikasikan') + '</button><button class="secondary-btn" type="button" data-delete-material="' + esc(m.id) + '">Hapus</button></div></div>';
+    }).join('');
+  }
+  async function loadAdmin(force) {
+    message('contentAdminMessage','Memuat data dari Supabase...');
+    try {
+      const results = await Promise.all([
+        api('content_categories?select=id,name,description,sort_order,is_active&order=sort_order.asc,created_at.asc'),
+        api('training_contents?select=id,category_id,title,description,content_type,content_url,thumbnail_url,sort_order,status,created_at&order=created_at.desc')
+      ]);
+      categories = results[0] || []; materials = results[1] || [];
+      fillCategorySelects(); renderCategories(); renderAdminMaterials(); renderMetrics();
+      message('contentAdminMessage','Data berhasil dimuat. Materi berstatus Draft belum terlihat oleh member.');
+    } catch (e) { message('contentAdminMessage','Gagal memuat: ' + e.message); }
+  }
+  async function loadMember(force) {
+    const el = document.getElementById('memberTrainingList'); if (!el) return;
+    el.textContent = 'Memuat materi training...';
+    try {
+      const results = await Promise.all([
+        api('content_categories?select=id,name,description,sort_order&is_active=eq.true&order=sort_order.asc'),
+        api('training_contents?select=id,category_id,title,description,content_type,content_url,thumbnail_url,created_at&status=eq.published&order=sort_order.asc,created_at.desc')
+      ]);
+      categories = results[0] || []; materials = results[1] || []; fillCategorySelects();
+      renderMember();
+    } catch (e) { el.textContent = 'Gagal memuat materi: ' + e.message; }
+  }
+  function renderMember() {
+    const el = document.getElementById('memberTrainingList'); if (!el) return;
+    const filter = document.getElementById('memberTrainingCategory')?.value || '';
+    const rows = materials.filter(m => !filter || m.category_id === filter);
+    if (!rows.length) { el.textContent = 'Belum ada materi yang dipublikasikan untuk kategori ini.'; return; }
+    el.innerHTML = rows.map(m => {
+      const cat = categories.find(c => c.id === m.category_id);
+      const thumb = m.thumbnail_url ? '<img src="' + esc(m.thumbnail_url) + '" alt="" loading="lazy" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px">' : '';
+      const label = ({video:'Video',pdf:'PDF',document:'Dokumen',link:'Link'})[m.content_type] || 'Materi';
+      return '<article style="padding:16px 0;border-bottom:1px solid #e5eaf1">' + thumb + '<div class="pill" style="display:inline-block">' + label + (cat ? ' · ' + esc(cat.name) : '') + '</div><h3 style="margin:9px 0 5px">' + esc(m.title) + '</h3><p class="section-sub">' + esc(m.description || 'Materi pembelajaran DIGITALCOREVISION.') + '</p><a class="primary-btn" style="display:inline-block;text-decoration:none;margin-top:8px" href="' + esc(m.content_url) + '" target="_blank" rel="noopener noreferrer">Buka Materi</a></article>';
+    }).join('');
+  }
+  document.getElementById('contentCategoryForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = document.getElementById('contentCategoryName').value.trim();
+    const description = document.getElementById('contentCategoryDescription').value.trim();
+    if (!name) return;
+    try {
+      await api('content_categories', { method:'POST', headers:{'Content-Type':'application/json',Prefer:'return=minimal'}, body:JSON.stringify({name,description,is_active:true}) });
+      e.target.reset(); showToast('Kategori berhasil disimpan.'); await loadAdmin(true);
+    } catch (err) { message('contentAdminMessage','Gagal menyimpan kategori: ' + err.message); }
+  });
+  document.getElementById('trainingContentForm')?.addEventListener('submit', async e => {
+    e.preventDefault();
+    const payload = {
+      title:document.getElementById('trainingTitle').value.trim(),
+      category_id:document.getElementById('trainingCategory').value || null,
+      description:document.getElementById('trainingDescription').value.trim(),
+      content_type:document.getElementById('trainingType').value,
+      status:document.getElementById('trainingStatus').value,
+      content_url:document.getElementById('trainingUrl').value.trim(),
+      thumbnail_url:document.getElementById('trainingThumbnail').value.trim() || null
+    };
+    try {
+      await api('training_contents', { method:'POST', headers:{'Content-Type':'application/json',Prefer:'return=minimal'}, body:JSON.stringify(payload) });
+      e.target.reset(); showToast('Materi berhasil disimpan.'); await loadAdmin(true);
+    } catch (err) { message('contentAdminMessage','Gagal menyimpan materi: ' + err.message); }
+  });
+  document.getElementById('contentCategoryList')?.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-delete-category]'); if (!btn) return;
+    if (!confirm('Hapus kategori ini? Materi terkait tetap tersimpan tanpa kategori.')) return;
+    try { await api('content_categories?id=eq.' + encodeURIComponent(btn.dataset.deleteCategory),{method:'DELETE',headers:{Prefer:'return=minimal'}}); showToast('Kategori dihapus.'); await loadAdmin(true); }
+    catch(err) { message('contentAdminMessage','Gagal menghapus kategori: ' + err.message); }
+  });
+  document.getElementById('contentAdminList')?.addEventListener('click', async e => {
+    const del = e.target.closest('[data-delete-material]');
+    const toggle = e.target.closest('[data-toggle-material]');
+    try {
+      if (del) {
+        if (!confirm('Hapus materi ini secara permanen?')) return;
+        await api('training_contents?id=eq.' + encodeURIComponent(del.dataset.deleteMaterial),{method:'DELETE',headers:{Prefer:'return=minimal'}});
+        showToast('Materi dihapus.');
+      } else if (toggle) {
+        const status = toggle.dataset.status === 'published' ? 'draft' : 'published';
+        await api('training_contents?id=eq.' + encodeURIComponent(toggle.dataset.toggleMaterial),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({status})});
+        showToast(status === 'published' ? 'Materi dipublikasikan.' : 'Materi dikembalikan ke Draft.');
+      } else return;
+      await loadAdmin(true);
+    } catch(err) { message('contentAdminMessage','Aksi gagal: ' + err.message); }
+  });
+  document.getElementById('memberTrainingCategory')?.addEventListener('change',renderMember);
+  window.loadContentModule = loadAdmin;
+  window.loadMemberTraining = loadMember;
+})();
+</script>
+
 </body>
 </html>
