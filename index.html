@@ -92,6 +92,8 @@ td { font-size:11px; padding:13px 10px; border-bottom:1px solid light-dark(#edf1
 .app-root { display:none; }
 body.admin-authenticated .app-root, body.member-authenticated .app-root { display:block; }
 body.member-authenticated [data-page="admin"], body.member-authenticated [data-page="members"], body.member-authenticated [data-page="membership"] { display:none !important; }
+body.member-authenticated [data-page="content"] { display:none !important; }
+body.member-authenticated #content { display:none !important; }
 .login-screen { min-height:100vh; display:grid; place-items:center; padding:22px; background:linear-gradient(135deg,#0d1b2e,#123b66); }
 .login-card { width:min(420px,100%); padding:30px; border-radius:18px; background:#fff; color:#17263b; box-shadow:0 24px 70px #0005; }
 .login-card h1 { font-size:25px; margin-bottom:8px; }
@@ -478,6 +480,10 @@ main { max-width:1200px; padding:42px 16px 50px; }
 <div class="modal-backdrop" id="modal"><div class="modal"><h2>Tambah Member</h2><p>Formulir demonstrasi. Akun sungguhan baru dibuat setelah integrasi Supabase Auth pada tahap implementasi backend.</p><div class="field"><label>Nama lengkap</label><input id="newName" placeholder="Nama member"></div><div class="field"><label>Email</label><input id="newEmail" type="email" placeholder="nama@email.com"></div><div class="field"><label>Organisasi</label><input id="newOrg" placeholder="Nama organisasi"></div><div class="modal-actions"><button class="secondary-btn" onclick="closeModal()">Batal</button><button class="primary-btn" onclick="addMember()">Simpan Demo</button></div></div></div>
 <script>
 function navigate(page) {
+  if (document.body.classList.contains('member-authenticated') && page === 'content') {
+    showToast('Menu Konten hanya dapat dikelola oleh Super Admin. Materi tersedia di menu Training.');
+    page = 'training';
+  }
   document.querySelectorAll('.page').forEach(el => el.classList.toggle('active', el.id === page));
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.page === page));
   if (page === 'admin' && typeof window.loadAdminMembers === 'function') window.loadAdminMembers();
