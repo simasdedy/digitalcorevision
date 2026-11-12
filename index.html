@@ -316,20 +316,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
         </div>
         <div class="card" style="margin-top:18px"><div class="section-title">Daftar Materi</div><div id="contentAdminList" class="section-sub">Memuat materi...</div></div>
         <div class="card" style="margin-top:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div class="section-title" style="margin:0">Laporan Training Progress Member</div><button class="secondary-btn" type="button" id="refreshTrainingProgressAdmin">Muat Ulang Progres</button></div><p id="trainingProgressAdminMessage" class="section-sub">Memuat laporan progres...</p><div id="trainingProgressAdminSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"><input id="trainingProgressSearch" type="search" placeholder="Cari nama atau email Member..." aria-label="Cari Member" style="flex:1;min-width:220px"><select id="trainingProgressFilter" aria-label="Filter progres" style="min-width:190px"><option value="all">Semua progres</option><option value="not-started">Belum mulai (0%)</option><option value="in-progress">Sedang belajar (1–99%)</option><option value="completed">Selesai (100%)</option></select></div><div id="trainingProgressAdminList" style="overflow-x:auto"></div></div>
-        <div class="card" style="margin-top:18px">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-            <div><div class="section-title" style="margin:0">Manajemen Sertifikat Training</div><p id="trainingCertificatesAdminMessage" class="section-sub">Memuat data sertifikat...</p></div>
-            <button class="secondary-btn" type="button" id="refreshTrainingCertificatesAdmin">Muat Ulang Sertifikat</button>
-          </div>
-          <div id="trainingCertificatesAdminSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"></div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
-            <input id="trainingCertificatesSearch" type="search" placeholder="Cari nama, email, atau nomor sertifikat..." aria-label="Cari sertifikat" style="flex:1;min-width:240px">
-            <select id="trainingCertificatesFilter" aria-label="Filter status sertifikat" style="min-width:180px">
-              <option value="all">Semua sertifikat</option><option value="active">Valid</option><option value="revoked">Dicabut</option>
-            </select>
-          </div>
-          <div id="trainingCertificatesAdminList" style="overflow-x:auto"></div>
-        </div>
+
       </section>
       <section class="page" id="profile">
         <div class="page-head"><div><h1>Profil & Pengaturan</h1><div class="subtitle">Informasi administrator dan konfigurasi dasar platform.</div></div></div>
@@ -485,6 +472,20 @@ main { max-width:1200px; padding:42px 16px 50px; }
             <div class="admin-panel-card" id="admin-members"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div><h3 style="font-size:17px;margin:0 0 5px">Data Member</h3><p style="font-size:11px;color:#6b7280;margin:0">Daftar profil dan status membership dari Supabase.</p></div><button class="secondary-btn" type="button" id="refreshAdminMembers">↻ Muat Ulang</button></div><input id="adminMemberSearch" class="field" style="width:min(320px,100%);padding:10px 12px;margin:0 0 14px;border:1px solid #d1d5db;border-radius:8px" placeholder="Cari nama atau email member..."><div id="adminMembersMessage" style="font-size:12px;color:#64748b;padding:12px 0">Data member belum dimuat.</div><div style="overflow-x:auto"><table class="admin-table" id="adminMembersTable"><thead><tr><th>Nama</th><th>Email</th><th>Membership</th><th>Masa Premium</th><th>Tanggal Daftar</th></tr></thead><tbody></tbody></table></div></div>
             <div class="admin-panel-card" id="activation"><h3 style="font-size:18px;margin:0 0 6px">Aktivasi Premium</h3><p style="font-size:11px;color:#6b7280;margin:0 0 16px">Aktifkan atau perpanjang Premium setelah pembayaran diverifikasi.</p><form id="premiumActivationForm"><div class="field"><label for="premiumMemberSelect">Pilih member</label><select id="premiumMemberSelect" required><option value="">Memuat daftar member...</option></select></div><div class="form-row"><div class="field"><label for="premiumDuration">Masa aktif (hari)</label><input id="premiumDuration" type="number" min="1" step="1" value="30" required></div><div class="field"><label for="premiumAmount">Nominal pembayaran (Rp, opsional)</label><input id="premiumAmount" type="number" min="0" step="1" placeholder="Contoh: 150000"></div></div><div class="field"><label for="premiumPaymentReference">Referensi pembayaran (opsional)</label><input id="premiumPaymentReference" maxlength="200" placeholder="Contoh: transfer 02/11/2026"></div><div class="field"><label for="premiumNotes">Catatan (opsional)</label><input id="premiumNotes" maxlength="500" placeholder="Catatan verifikasi pembayaran"></div><button class="primary-btn" id="premiumActivationButton" type="submit">Aktifkan Premium</button><span id="premiumActivationMessage" style="font-size:11px;color:#64748b;margin-left:10px" role="status"></span></form><p style="font-size:10px;color:#9ca3af;margin:14px 0 0">Durasi fleksibel. Default 30 hari; perpanjangan sebelum masa aktif habis akan menambahkan durasi dari tanggal kedaluwarsa sebelumnya.</p></div>
             <div class="admin-panel-card" id="dashboardDisplaySettings"><h3 style="font-size:16px;margin:0 0 8px">Pengaturan Tampilan Dashboard Member</h3><p style="font-size:11px;color:#6b7280;margin:0 0 14px">Ubah teks sambutan dan banner yang dilihat member pada halaman Dashboard.</p><div class="field"><label>Teks label banner</label><input id="bannerEyebrowInput" value="DigitalCoreVision"></div><div class="field"><label>Judul banner</label><input id="bannerTitleInput" value="ESKAYVIE"></div><div class="field"><label>Deskripsi banner</label><input id="bannerDescriptionInput" value="Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja"></div><button class="primary-btn" type="button" onclick="saveDashboardDisplaySettings()">Simpan Pengaturan Tampilan</button><p style="font-size:10px;color:#9ca3af;margin:12px 0 0">Untuk tahap preview, pengaturan tersimpan di browser ini. Penyimpanan ke database agar berlaku untuk semua member akan dihubungkan pada tahap integrasi berikutnya.</p></div>
+        <div class="admin-panel-card" style="margin-top:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <div><div class="section-title" style="margin:0">Manajemen Sertifikat Training</div><p id="trainingCertificatesAdminMessage" class="section-sub">Memuat data sertifikat...</p></div>
+            <button class="secondary-btn" type="button" id="refreshTrainingCertificatesAdmin">Muat Ulang Sertifikat</button>
+          </div>
+          <div id="trainingCertificatesAdminSummary" style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0"></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin:12px 0">
+            <input id="trainingCertificatesSearch" type="search" placeholder="Cari nama, email, atau nomor sertifikat..." aria-label="Cari sertifikat" style="flex:1;min-width:240px">
+            <select id="trainingCertificatesFilter" aria-label="Filter status sertifikat" style="min-width:180px">
+              <option value="all">Semua sertifikat</option><option value="active">Valid</option><option value="revoked">Dicabut</option>
+            </select>
+          </div>
+          <div id="trainingCertificatesAdminList" style="overflow-x:auto"></div>
+        </div>
             <div class="notice" style="margin-top:18px">Panel ini merupakan rancangan tampilan. Angka statistik, lisensi, backup, KPI, dan request upgrade belum terhubung ke database. Akses produksi tetap dibatasi khusus untuk Super Admin.</div>
           </div>
         </div>
@@ -503,6 +504,7 @@ function navigate(page) {
   document.querySelectorAll('.page').forEach(el => el.classList.toggle('active', el.id === page));
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.page === page));
   if (page === 'admin' && typeof window.loadAdminMembers === 'function') window.loadAdminMembers();
+  if (page === 'admin' && typeof window.loadTrainingCertificatesAdmin === 'function') window.loadTrainingCertificatesAdmin();
   if (page === 'leads' && typeof window.loadLeads === 'function') { window.loadLeads(); if (typeof window.loadLeadReport === 'function') window.loadLeadReport(); }
   if (page === 'dashboard' && typeof window.loadDashboardFollowUps === 'function') window.loadDashboardFollowUps();
   if (page === 'content' && typeof window.loadContentModule === 'function') window.loadContentModule();
@@ -2126,11 +2128,11 @@ async function loadAffiliateCenter() {
       fillCategorySelects(); renderCategories(); renderAdminMaterials(); renderMetrics();
       message('contentAdminMessage','Data berhasil dimuat. Materi berstatus Draft belum terlihat oleh member.');
       await loadTrainingProgressAdmin();
-      await loadTrainingCertificatesAdmin();
     } catch (e) { message('contentAdminMessage','Gagal memuat: ' + e.message); }
   }
   document.getElementById('refreshTrainingProgressAdmin')?.addEventListener('click', loadTrainingProgressAdmin);
   document.getElementById('refreshTrainingCertificatesAdmin')?.addEventListener('click', loadTrainingCertificatesAdmin);
+  window.loadTrainingCertificatesAdmin = loadTrainingCertificatesAdmin;
   function currentMemberId() {
     try {
       const parts = (token() || '').split('.');
