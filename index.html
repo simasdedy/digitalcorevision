@@ -2034,6 +2034,10 @@ async function loadAffiliateCenter() {
         if (!upload.ok) { const err = await upload.json().catch(()=>({})); throw new Error(err.message || 'Upload file gagal (' + upload.status + ').'); }
         contentUrl = objectPath;
       }
+      if (!contentUrl && editingMaterialId && !selectedFile) {
+        const existing = materials.find(item => item.id === editingMaterialId);
+        if (existing) contentUrl = existing.content_url || '';
+      }
       if (!contentUrl) throw new Error('Masukkan URL materi atau pilih file untuk diunggah.');
       const payload = {
         title:document.getElementById('trainingTitle').value.trim(),
