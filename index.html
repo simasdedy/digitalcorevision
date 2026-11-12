@@ -306,7 +306,8 @@ main { max-width:1200px; padding:42px 16px 50px; }
                 <div class="field"><label for="trainingType">Jenis materi *</label><select id="trainingType"><option value="video">Video</option><option value="pdf">PDF</option><option value="document">Dokumen</option><option value="link">Link / Lainnya</option></select></div>
                 <div class="field"><label for="trainingStatus">Status</label><select id="trainingStatus"><option value="draft">Draft</option><option value="published">Publikasikan</option></select></div>
               </div>
-              <div class="field"><label for="trainingUrl">URL materi *</label><input id="trainingUrl" type="url" required maxlength="2000" placeholder="https://..."></div>
+              <div class="field" id="trainingFileField" hidden><label for="trainingFile">Upload PDF / Dokumen (maks. 20 MB)</label><input id="trainingFile" type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"><small class="section-sub">Pilih file untuk mengunggah ke penyimpanan DIGITALCOREVISION. Saat edit, kosongkan jika ingin tetap memakai file sebelumnya.</small></div>
+              <div class="field"><label for="trainingUrl">URL materi *</label><input id="trainingUrl" type="url" maxlength="2000" placeholder="https://... atau otomatis dari upload"></div>
               <div class="field"><label for="trainingThumbnail">URL thumbnail (opsional)</label><input id="trainingThumbnail" type="url" maxlength="2000" placeholder="https://..."></div>
               <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="primary-btn" id="saveTrainingContentButton" type="submit">Simpan Materi</button><button class="secondary-btn" id="cancelTrainingEditButton" type="button" hidden>Batal Edit</button></div>
             </form>
@@ -2001,16 +2002,34 @@ async function loadAffiliateCenter() {
   });
   document.getElementById('trainingContentForm')?.addEventListener('submit', async e => {
     e.preventDefault();
-    const payload = {
-      title:document.getElementById('trainingTitle').value.trim(),
-      category_id:document.getElementById('trainingCategory').value || null,
-      description:document.getElementById('trainingDescription').value.trim(),
-      content_type:document.getElementById('trainingType').value,
-      status:document.getElementById('trainingStatus').value,
-      content_url:document.getElementById('trainingUrl').value.trim(),
-      thumbnail_url:document.getElementById('trainingThumbnail').value.trim() || null
-    };
+    const fileInput = document.getElementById('trainingFile');
+    const selectedFile = fileInput?.files?.[0] || null;
+    const contentType = document.getElementById('trainingType').value;
+    let contentUrl = document.getElementById('trainingUrl').value.trim();
     try {
+      if (selectedFile) {
+        if (!['pdf','document'].includes(contentType)) throw new Error('Upload file hanya tersedia untuk jenis PDF atau Dokumen.');
+        const allowed = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        if (!allowed.includes(selectedFile.type)) throw new Error('Format file harus PDF, DOC, atau DOCX.');
+        if (selectedFile.size > 20 * 1024 * 1024) throw new Error('Ukuran file maksimal 20 MB.');
+        const safeName = selectedFile.name.replace(/[^A-Za-z0-9._-]/g,'_');
+        const objectPath = 'files/' + crypto.randomUUID() + '_' + safeName;
+        const upload = await fetch(BASE.replace('/rest/v1','') + '/storage/v1/object/training-materials/' + objectPath.split('/').map(encodeURIComponent).join('/'), {
+          method:'POST', headers:headers({'Content-Type':selectedFile.type,'x-upsert':'false'}), body:selectedFile
+        });
+        if (!upload.ok) { const err = await upload.json().catch(()=>({})); throw new Error(err.message || 'Upload file gagal (' + upload.status + ').'); }
+        contentUrl = objectPath;
+      }
+      if (!contentUrl) throw new Error('Masukkan URL materi atau pilih file untuk diunggah.');
+      const payload = {
+        title:document.getElementById('trainingTitle').value.trim(),
+        category_id:document.getElementById('trainingCategory').value || null,
+        description:document.getElementById('trainingDescription').value.trim(),
+        content_type:contentType,
+        status:document.getElementById('trainingStatus').value,
+        content_url:contentUrl,
+        thumbnail_url:document.getElementById('trainingThumbnail').value.trim() || null
+      };
       if (editingMaterialId) {
         await api('training_contents?id=eq.' + encodeURIComponent(editingMaterialId), { method:'PATCH', headers:{'Content-Type':'application/json',Prefer:'return=minimal'}, body:JSON.stringify(payload) });
         resetTrainingEditor(); showToast('Perubahan materi berhasil disimpan.');
@@ -2037,8 +2056,10 @@ async function loadAffiliateCenter() {
     document.getElementById('trainingDescription').value = item.description || '';
     document.getElementById('trainingType').value = item.content_type || 'link';
     document.getElementById('trainingStatus').value = item.status || 'draft';
-    document.getElementById('trainingUrl').value = item.content_url || '';
+    document.getElementById('trainingUrl').value = item.content_url && !item.content_url.startsWith('files/') ? item.content_url : '';
     document.getElementById('trainingThumbnail').value = item.thumbnail_url || '';
+    const fileInput = document.getElementById('trainingFile'); if (fileInput) fileInput.value = '';
+    const fileField = document.getElementById('trainingFileField'); if (fileField) fileField.hidden = !['pdf','document'].includes(item.content_type);
     const save = document.getElementById('saveTrainingContentButton');
     const cancel = document.getElementById('cancelTrainingEditButton');
     if (save) save.textContent = 'Simpan Perubahan';
@@ -2047,6 +2068,11 @@ async function loadAffiliateCenter() {
     message('contentAdminMessage','Mode edit aktif: ubah data lalu klik Simpan Perubahan.');
   }
   document.getElementById('cancelTrainingEditButton')?.addEventListener('click', resetTrainingEditor);
+  document.getElementById('trainingType')?.addEventListener('change', e => {
+    const fileField = document.getElementById('trainingFileField');
+    if (fileField) fileField.hidden = !['pdf','document'].includes(e.target.value);
+  });
+  document.getElementById('trainingType')?.dispatchEvent(new Event('change'));
   document.getElementById('contentCategoryList')?.addEventListener('click', async e => {
     const btn = e.target.closest('[data-delete-category]'); if (!btn) return;
     if (!confirm('Hapus kategori ini? Materi terkait tetap tersimpan tanpa kategori.')) return;
