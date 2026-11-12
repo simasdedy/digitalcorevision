@@ -355,7 +355,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
   </div>
 </div>
       </section>
-      <section class="page" id="training"><div class="page-head"><div><h1>Training</h1><div class="subtitle">Materi pembelajaran untuk pengembangan bisnis network.</div><button class="secondary-btn" type="button" onclick="window.loadMemberTraining(true)">Muat Ulang</button></div></div><div class="card"><div class="field"><label for="memberTrainingCategory">Filter kategori</label><select id="memberTrainingCategory"><option value="">Semua kategori</option></select></div><div id="memberTrainingList" class="section-sub">Memuat materi training...</div></div></section>
+      <section class="page" id="training"><div class="page-head"><div><h1>Training</h1><div class="subtitle">Materi pembelajaran untuk pengembangan bisnis network.</div><button class="secondary-btn" type="button" onclick="window.loadMemberTraining(true)">Muat Ulang</button></div></div><div class="card"><div class="field"><label for="memberTrainingCategory">Filter kategori</label><select id="memberTrainingCategory"><option value="">Semua kategori</option></select></div><div id="memberTrainingProgress" class="notice" style="margin-bottom:14px">Memuat progres belajar...</div><div id="memberTrainingList" class="section-sub">Memuat materi training...</div></div></section>
       <section class="page" id="leads">
         <div class="page-head">
           <div><h1>Data Leads</h1><div class="subtitle">Catat prospek, pantau status, dan kelola tindak lanjut Anda.</div></div>
@@ -1951,17 +1951,35 @@ async function loadAffiliateCenter() {
       message('contentAdminMessage','Data berhasil dimuat. Materi berstatus Draft belum terlihat oleh member.');
     } catch (e) { message('contentAdminMessage','Gagal memuat: ' + e.message); }
   }
+  function currentMemberId() {
+    try {
+      const parts = (token() || '').split('.');
+      if (parts.length !== 3) return '';
+      const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      return JSON.parse(atob(payload)).sub || '';
+    } catch (_) { return ''; }
+  }
+  let memberProgress = [];
   async function loadMember(force) {
     const el = document.getElementById('memberTrainingList'); if (!el) return;
     el.textContent = 'Memuat materi training...';
     try {
+      const userId = currentMemberId();
+      if (!userId) throw new Error('Identitas sesi Member tidak ditemukan. Silakan login kembali.');
       const results = await Promise.all([
         api('content_categories?select=id,name,description,sort_order&is_active=eq.true&order=sort_order.asc'),
-        api('training_contents?select=id,category_id,title,description,content_type,content_url,thumbnail_url,created_at&status=eq.published&order=sort_order.asc,created_at.desc')
+        api('training_contents?select=id,category_id,title,description,content_type,content_url,thumbnail_url,created_at&status=eq.published&order=sort_order.asc,created_at.desc'),
+        api('training_progress?select=training_content_id,is_completed,completed_at&user_id=eq.' + encodeURIComponent(userId))
       ]);
-      categories = results[0] || []; materials = results[1] || []; fillCategorySelects();
-      renderMember();
-    } catch (e) { el.textContent = 'Gagal memuat materi: ' + e.message; }
+      categories = results[0] || [];
+      materials = results[1] || [];
+      memberProgress = results[2] || [];
+      fillCategorySelects();
+      await renderMember();
+    } catch (e) {
+      el.textContent = 'Gagal memuat materi: ' + e.message;
+      message('memberTrainingProgress', 'Progres belajar belum dapat dimuat.');
+    }
   }
   function youtubeEmbedUrl(raw) {
     try {
@@ -1989,10 +2007,17 @@ async function loadAffiliateCenter() {
     const el = document.getElementById('memberTrainingList'); if (!el) return;
     const filter = document.getElementById('memberTrainingCategory')?.value || '';
     const rows = materials.filter(m => !filter || m.category_id === filter);
+    const completedIds = new Set(memberProgress.filter(p => p.is_completed).map(p => p.training_content_id));
+    const total = materials.length;
+    const completed = materials.filter(m => completedIds.has(m.id)).length;
+    const percent = total ? Math.round(completed / total * 100) : 0;
+    const progressEl = document.getElementById('memberTrainingProgress');
+    if (progressEl) progressEl.innerHTML = '<strong>Progres belajar: ' + completed + ' dari ' + total + ' materi (' + percent + '%)</strong><div style="height:9px;background:#dbe5ef;border-radius:20px;overflow:hidden;margin-top:9px"><div style="height:100%;width:' + percent + '%;background:#0d9488;border-radius:20px;transition:width .2s"></div></div>';
     if (!rows.length) { el.textContent = 'Belum ada materi yang dipublikasikan untuk kategori ini.'; return; }
     el.innerHTML = '<p class="section-sub">Menyiapkan materi...</p>';
     const cards = await Promise.all(rows.map(async m => {
       const cat = categories.find(c => c.id === m.category_id);
+      const isDone = completedIds.has(m.id);
       const thumb = m.thumbnail_url ? '<img src="' + esc(m.thumbnail_url) + '" alt="" loading="lazy" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px">' : '';
       const label = ({video:'Video',pdf:'PDF',document:'Dokumen',link:'Link'})[m.content_type] || 'Materi';
       const embed = m.content_type === 'video' ? youtubeEmbedUrl(m.content_url) : '';
@@ -2002,10 +2027,39 @@ async function loadAffiliateCenter() {
         try { href = await getTrainingFileUrl(m.content_url); } catch (_) { href = ''; }
       }
       const button = embed ? '' : href ? '<a class="primary-btn" style="display:inline-block;text-decoration:none;margin-top:8px" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">Buka Materi</a>' : '<p class="section-sub">File belum dapat dibuka. Silakan muat ulang halaman.</p>';
-      return '<article style="padding:16px 0;border-bottom:1px solid #e5eaf1">' + thumb + '<div class="pill" style="display:inline-block">' + label + (cat ? ' · ' + esc(cat.name) : '') + '</div><h3 style="margin:9px 0 5px">' + esc(m.title) + '</h3><p class="section-sub">' + esc(m.description || 'Materi pembelajaran DIGITALCOREVISION.') + '</p>' + player + button + '</article>';
+      const doneButton = isDone
+        ? '<span class="status" style="display:inline-block;margin:10px 0 0">✓ Sudah Selesai</span>'
+        : '<button class="secondary-btn" type="button" data-complete-training="' + esc(m.id) + '" style="margin:10px 0 0">Tandai Selesai</button>';
+      return '<article style="padding:16px 0;border-bottom:1px solid #e5eaf1">' + thumb + '<div class="pill" style="display:inline-block">' + label + (cat ? ' · ' + esc(cat.name) : '') + '</div><h3 style="margin:9px 0 5px">' + esc(m.title) + '</h3><p class="section-sub">' + esc(m.description || 'Materi pembelajaran DIGITALCOREVISION.') + '</p>' + player + button + '<div>' + doneButton + '</div></article>';
     }));
     el.innerHTML = cards.join('');
   }
+  document.getElementById('memberTrainingList')?.addEventListener('click', async e => {
+    const btn = e.target.closest('[data-complete-training]');
+    if (!btn) return;
+    const contentId = btn.dataset.completeTraining;
+    const userId = currentMemberId();
+    if (!userId) { showToast('Sesi Member tidak ditemukan. Silakan login kembali.'); return; }
+    btn.disabled = true;
+    btn.textContent = 'Menyimpan...';
+    try {
+      const now = new Date().toISOString();
+      await api('training_progress?on_conflict=user_id,training_content_id', {
+        method:'POST',
+        headers:{'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},
+        body:JSON.stringify({user_id:userId,training_content_id:contentId,is_completed:true,completed_at:now,updated_at:now})
+      });
+      const existing = memberProgress.find(p => p.training_content_id === contentId);
+      if (existing) { existing.is_completed = true; existing.completed_at = now; }
+      else memberProgress.push({training_content_id:contentId,is_completed:true,completed_at:now});
+      await renderMember();
+      showToast('Progres belajar berhasil disimpan.');
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Tandai Selesai';
+      showToast('Gagal menyimpan progres: ' + err.message);
+    }
+  });
   document.getElementById('contentCategoryForm')?.addEventListener('submit', async e => {
     e.preventDefault();
     const name = document.getElementById('contentCategoryName').value.trim();
