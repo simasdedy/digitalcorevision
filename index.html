@@ -1981,7 +1981,9 @@ async function loadAffiliateCenter() {
     });
     const data = await response.json().catch(()=>({}));
     if (!response.ok || !data.signedURL) throw new Error(data.message || 'Tautan file tidak dapat dibuat.');
-    return data.signedURL.startsWith('http') ? data.signedURL : BASE.replace('/rest/v1','') + data.signedURL;
+    if (data.signedURL.startsWith('http')) return data.signedURL;
+    const storagePath = data.signedURL.startsWith('/storage/v1/') ? data.signedURL : '/storage/v1' + (data.signedURL.startsWith('/') ? data.signedURL : '/' + data.signedURL);
+    return BASE.replace('/rest/v1','') + storagePath;
   }
   async function renderMember() {
     const el = document.getElementById('memberTrainingList'); if (!el) return;
