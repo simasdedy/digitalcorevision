@@ -1975,20 +1975,34 @@ async function loadAffiliateCenter() {
       return /^[A-Za-z0-9_-]{11}$/.test(id) ? 'https://www.youtube-nocookie.com/embed/' + id : '';
     } catch (_) { return ''; }
   }
-  function renderMember() {
+  async function getTrainingFileUrl(objectPath) {
+    const response = await fetch(BASE.replace('/rest/v1','') + '/storage/v1/object/sign/training-materials/' + objectPath.split('/').map(encodeURIComponent).join('/'), {
+      method:'POST', headers:headers({'Content-Type':'application/json'}), body:JSON.stringify({expiresIn:3600})
+    });
+    const data = await response.json().catch(()=>({}));
+    if (!response.ok || !data.signedURL) throw new Error(data.message || 'Tautan file tidak dapat dibuat.');
+    return data.signedURL.startsWith('http') ? data.signedURL : BASE.replace('/rest/v1','') + data.signedURL;
+  }
+  async function renderMember() {
     const el = document.getElementById('memberTrainingList'); if (!el) return;
     const filter = document.getElementById('memberTrainingCategory')?.value || '';
     const rows = materials.filter(m => !filter || m.category_id === filter);
     if (!rows.length) { el.textContent = 'Belum ada materi yang dipublikasikan untuk kategori ini.'; return; }
-    el.innerHTML = rows.map(m => {
+    el.innerHTML = '<p class="section-sub">Menyiapkan materi...</p>';
+    const cards = await Promise.all(rows.map(async m => {
       const cat = categories.find(c => c.id === m.category_id);
       const thumb = m.thumbnail_url ? '<img src="' + esc(m.thumbnail_url) + '" alt="" loading="lazy" style="width:100%;max-height:180px;object-fit:cover;border-radius:10px;margin-bottom:10px">' : '';
       const label = ({video:'Video',pdf:'PDF',document:'Dokumen',link:'Link'})[m.content_type] || 'Materi';
       const embed = m.content_type === 'video' ? youtubeEmbedUrl(m.content_url) : '';
       const player = embed ? '<div style="position:relative;width:100%;max-width:760px;aspect-ratio:16/9;margin:14px 0;border-radius:12px;overflow:hidden;background:#101827"><iframe src="' + embed + '" title="' + esc(m.title) + '" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>' : '';
-      const button = embed ? '' : '<a class="primary-btn" style="display:inline-block;text-decoration:none;margin-top:8px" href="' + esc(m.content_url) + '" target="_blank" rel="noopener noreferrer">Buka Materi</a>';
+      let href = m.content_url;
+      if (['pdf','document'].includes(m.content_type) && m.content_url.startsWith('files/')) {
+        try { href = await getTrainingFileUrl(m.content_url); } catch (_) { href = ''; }
+      }
+      const button = embed ? '' : href ? '<a class="primary-btn" style="display:inline-block;text-decoration:none;margin-top:8px" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">Buka Materi</a>' : '<p class="section-sub">File belum dapat dibuka. Silakan muat ulang halaman.</p>';
       return '<article style="padding:16px 0;border-bottom:1px solid #e5eaf1">' + thumb + '<div class="pill" style="display:inline-block">' + label + (cat ? ' · ' + esc(cat.name) : '') + '</div><h3 style="margin:9px 0 5px">' + esc(m.title) + '</h3><p class="section-sub">' + esc(m.description || 'Materi pembelajaran DIGITALCOREVISION.') + '</p>' + player + button + '</article>';
-    }).join('');
+    }));
+    el.innerHTML = cards.join('');
   }
   document.getElementById('contentCategoryForm')?.addEventListener('submit', async e => {
     e.preventDefault();
