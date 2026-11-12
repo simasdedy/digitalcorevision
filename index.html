@@ -2137,41 +2137,47 @@ async function loadAffiliateCenter() {
     }));
     el.innerHTML = cards.join('');
   }
-  function openTrainingCertificate() {
+  async function openTrainingCertificate() {
     const userId = currentMemberId();
     const total = materials.length;
     const completedIds = new Set(memberProgress.filter(p => p.is_completed).map(p => p.training_content_id));
     const completed = materials.filter(m => completedIds.has(m.id)).length;
     if (!userId || total === 0 || completed !== total) {
-      showToast('Selesaikan seluruh materi training sebelum mengunduh sertifikat.');
+      showToast('Selesaikan seluruh materi training sebelum menerbitkan sertifikat.');
       return;
     }
+    // Open synchronously during the click to avoid popup blockers while the RPC runs.
     const popup = window.open('', '_blank');
     if (!popup) {
       showToast('Izinkan pop-up untuk membuka sertifikat.');
       return;
     }
-    const name = memberProfileName || 'Member DIGITALCOREVISION';
-    const dateValues = memberProgress.filter(p => p.is_completed && materials.some(m => m.id === p.training_content_id)).map(p => p.completed_at).filter(Boolean).map(value => new Date(value).getTime()).filter(Number.isFinite);
-    const completedAt = dateValues.length ? new Date(Math.max(...dateValues)) : new Date();
-    const dateText = completedAt.toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'});
-    const year = completedAt.getFullYear();
-    let certificateCode = '';
+    popup.document.write('<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Menerbitkan Sertifikat</title></head><body style="font-family:Arial;padding:40px;color:#12385b">Menghubungi database sertifikat DIGITALCOREVISION...</body></html>');
     try {
-      const storageKey = 'dcv_training_certificate_' + userId;
-      certificateCode = localStorage.getItem(storageKey) || '';
-      if (!certificateCode) {
-        certificateCode = 'DCV-TR-' + year + '-' + (crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'').slice(0,12).toUpperCase() : Math.random().toString(36).slice(2,14).toUpperCase());
-        localStorage.setItem(storageKey, certificateCode);
-      }
-    } catch (_) {
-      certificateCode = 'DCV-TR-' + year + '-' + userId.replace(/-/g,'').slice(0,12).toUpperCase();
+      const response = await fetch(BASE + '/rest/v1/rpc/issue_training_certificate', {
+        method:'POST',
+        headers:{apikey:KEY,Authorization:'Bearer ' + (token() || ''),'Content-Type':'application/json'},
+        body:JSON.stringify({})
+      });
+      const raw = await response.text();
+      let data = null; try { data = raw ? JSON.parse(raw) : null; } catch (_) { data = raw; }
+      if (!response.ok) throw new Error((data && (data.message || data.details || data.hint)) || 'Penerbitan sertifikat gagal (' + response.status + ').');
+      const certificate = Array.isArray(data) ? data[0] : data;
+      if (!certificate || !certificate.certificate_number) throw new Error('Database tidak mengembalikan nomor sertifikat.');
+      const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+      const dateText = value => value ? new Date(value + (String(value).length === 10 ? 'T00:00:00' : '')).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'}) : '—';
+      const verificationUrl = new URL('verify.html', window.location.href);
+      verificationUrl.searchParams.set('code', certificate.certificate_number);
+      const completionDate = dateText(certificate.completion_date);
+      const memberName = certificate.member_name || memberProfileName || 'Member DIGITALCOREVISION';
+      const courseTitle = certificate.course_title || 'Training DIGITALCOREVISION 2.0';
+      popup.document.open();
+      popup.document.write('<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sertifikat Training DIGITALCOREVISION</title><style>*{box-sizing:border-box}body{margin:0;background:#eef3f8;color:#102b49;font-family:Arial,sans-serif}.sheet{width:1000px;max-width:calc(100% - 32px);min-height:700px;margin:32px auto;padding:48px 58px;border:12px double #0e7490;background:#fff;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}.brand{font-size:18px;font-weight:800;letter-spacing:4px;color:#0e7490}.eyebrow{margin-top:34px;letter-spacing:5px;font-size:14px;color:#64748b}.heading{font-family:Georgia,serif;font-size:50px;margin:12px 0;color:#12385b}.intro{font-size:18px;color:#475569}.name{font-family:Georgia,serif;font-size:38px;font-weight:bold;margin:18px 0 24px;border-bottom:2px solid #c69b43;padding:0 28px 12px}.desc{font-size:17px;line-height:1.7;max-width:720px}.course{font-weight:bold;color:#0e7490}.footer{width:100%;display:flex;justify-content:space-between;align-items:end;margin-top:42px;font-size:12px;color:#64748b;text-align:left}.seal{border:2px solid #c69b43;border-radius:50%;width:82px;height:82px;display:flex;align-items:center;justify-content:center;color:#a87922;font-weight:bold;letter-spacing:2px;text-align:center}.verify{display:flex;align-items:center;gap:12px;margin-top:26px;text-align:left;font-size:11px;color:#475569}.verify a{color:#0e7490;word-break:break-all}@media print{body{background:#fff}.sheet{width:100%;max-width:none;min-height:0;height:190mm;margin:0;border-width:10px;page-break-inside:avoid}@page{size:landscape;margin:8mm}.no-print{display:none!important}}@media(max-width:650px){.sheet{padding:25px 18px;min-height:560px}.heading{font-size:34px}.name{font-size:28px}.footer{gap:15px;flex-wrap:wrap}}</style></head><body><main class="sheet"><div class="brand">DIGITALCOREVISION 2.0</div><div class="eyebrow">SERTIFIKAT PENYELESAIAN</div><h1 class="heading">Certificate of Completion</h1><p class="intro">Dengan ini menyatakan bahwa</p><div class="name">' + safe(memberName) + '</div><p class="desc">telah menyelesaikan seluruh materi training pada program pembelajaran <span class="course">' + safe(courseTitle) + '</span>.</p><p class="desc">Diselesaikan pada <strong>' + safe(completionDate) + '</strong>.</p><div class="footer"><div><strong>Nomor Sertifikat</strong><br>' + safe(certificate.certificate_number) + '<br><br><strong>Verifikasi online</strong><br><a href="' + safe(verificationUrl.href) + '">' + safe(verificationUrl.href) + '</a></div><div class="seal">DCV<br>2.0</div></div><div class="verify"><div id="qrcode"></div><div>Pindai QR Code untuk memeriksa keaslian sertifikat<br>melalui database DIGITALCOREVISION.</div></div></main><div class="no-print" style="text-align:center;margin:0 0 28px"><button onclick="window.print()" style="padding:12px 22px;background:#12385b;color:white;border:0;border-radius:8px;font-weight:bold;cursor:pointer">Cetak / Simpan sebagai PDF</button></div><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script><script>window.addEventListener("load",()=>{if(window.QRCode){new QRCode(document.getElementById("qrcode"),{text:' + JSON.stringify(verificationUrl.href) + ',width:104,height:104});}setTimeout(()=>window.print(),700);});<\/script></body></html>');
+      popup.document.close();
+    } catch (error) {
+      popup.close();
+      showToast('Sertifikat belum dapat diterbitkan: ' + error.message + '. Pastikan SQL sertifikat sudah dijalankan di Supabase.');
     }
-    const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-    const trainingTitles = materials.map(item => item.title).filter(Boolean);
-    popup.document.open();
-    popup.document.write('<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sertifikat Training DIGITALCOREVISION</title><style>*{box-sizing:border-box}body{margin:0;background:#eef3f8;color:#102b49;font-family:Arial,sans-serif}.sheet{width:1000px;max-width:calc(100% - 32px);min-height:700px;margin:32px auto;padding:58px;border:12px double #0e7490;background:#fff;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}.brand{font-size:18px;font-weight:800;letter-spacing:4px;color:#0e7490}.eyebrow{margin-top:44px;letter-spacing:5px;font-size:14px;color:#64748b}.heading{font-family:Georgia,serif;font-size:52px;margin:12px 0;color:#12385b}.intro{font-size:18px;color:#475569}.name{font-family:Georgia,serif;font-size:38px;font-weight:bold;margin:18px 0 24px;border-bottom:2px solid #c69b43;padding:0 28px 12px}.desc{font-size:17px;line-height:1.7;max-width:720px}.course{font-weight:bold;color:#0e7490}.footer{width:100%;display:flex;justify-content:space-between;align-items:end;margin-top:60px;font-size:12px;color:#64748b}.seal{border:2px solid #c69b43;border-radius:50%;width:88px;height:88px;display:flex;align-items:center;justify-content:center;color:#a87922;font-weight:bold;letter-spacing:2px}@media print{body{background:#fff}.sheet{width:100%;max-width:none;min-height:0;height:190mm;margin:0;border-width:10px;page-break-inside:avoid}@page{size:landscape;margin:10mm}.no-print{display:none!important}}@media(max-width:650px){.sheet{padding:28px 18px;min-height:560px}.heading{font-size:36px}.name{font-size:28px}.footer{gap:20px;flex-wrap:wrap}}</style></head><body><main class="sheet"><div class="brand">DIGITALCOREVISION 2.0</div><div class="eyebrow">SERTIFIKAT PENYELESAIAN</div><h1 class="heading">Certificate of Completion</h1><p class="intro">Dengan ini menyatakan bahwa</p><div class="name">' + safe(name) + '</div><p class="desc">telah menyelesaikan seluruh materi training yang dipublikasikan pada program pembelajaran <span class="course">DIGITALCOREVISION</span>.</p><p class="desc">Diselesaikan pada <strong>' + safe(dateText) + '</strong>.</p><div class="footer"><div style="text-align:left"><strong>Nomor Sertifikat</strong><br>' + safe(certificateCode) + '<br><br>DigitalCorevision Learning</div><div class="seal">DCV<br>2.0</div></div></main><div class="no-print" style="text-align:center;margin:0 0 28px"><button onclick="window.print()" style="padding:12px 22px;background:#12385b;color:white;border:0;border-radius:8px;font-weight:bold;cursor:pointer">Cetak / Simpan sebagai PDF</button></div><script>window.addEventListener("load",()=>setTimeout(()=>window.print(),350));<\/script></body></html>');
-    popup.document.close();
   }
   document.getElementById('memberTrainingProgress')?.addEventListener('click', event => {
     if (event.target.closest('#downloadTrainingCertificate')) openTrainingCertificate();
