@@ -1970,7 +1970,33 @@ async function loadAffiliateCenter() {
       }).sort((a,b) => b.percent-a.percent || a.name.localeCompare(b.name));
       messageEl.textContent = rows.length + ' Member · ' + published.length + ' materi dipublikasikan · ' + progressRows.filter(p=>p.is_completed).length + ' catatan penyelesaian.';
       if (!rows.length) { listEl.innerHTML = '<p class="section-sub">Belum ada data Member untuk ditampilkan.</p>'; return; }
-      listEl.innerHTML = '<table class="admin-table" style="width:100%;margin-top:12px"><thead><tr><th>Member</th><th>Materi Selesai</th><th>Progres</th></tr></thead><tbody>' + rows.map(row => '<tr><td><strong>' + esc(row.name) + '</strong><br><small>' + esc(row.email) + '</small></td><td>' + row.completed + ' / ' + published.length + '</td><td><strong>' + row.percent + '%</strong><div style="height:7px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin-top:6px;min-width:90px"><div style="height:100%;width:' + row.percent + '%;background:#0d9488"></div></div></td></tr>').join('') + '</tbody></table>';
+      const dateLabel = value => {
+        if (!value) return '—';
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('id-ID', {dateStyle:'medium',timeStyle:'short'});
+      };
+      const tableRows = rows.map(row => {
+        const memberProgress = progressRows.filter(p => p.user_id === row.id && p.is_completed);
+        const detailRows = published.map(material => {
+          const record = memberProgress.find(p => p.training_content_id === material.id);
+          const done = !!record;
+          return '<tr><td>' + esc(material.title) + '</td><td>' + (done ? '<span class="status">✓ Selesai</span>' : '<span class="section-sub">Belum selesai</span>') + '</td><td>' + (done ? esc(dateLabel(record.completed_at)) : '—') + '</td></tr>';
+        }).join('');
+        return '<tr><td><strong>' + esc(row.name) + '</strong><br><small>' + esc(row.email) + '</small></td><td>' + row.completed + ' / ' + published.length + '</td><td><strong>' + row.percent + '%</strong><div style="height:7px;background:#e2e8f0;border-radius:20px;overflow:hidden;margin-top:6px;min-width:90px"><div style="height:100%;width:' + row.percent + '%;background:#0d9488"></div></div></td><td><button type="button" class="secondary-btn" data-training-member-detail="' + esc(row.id) + '">Detail</button></td></tr><tr id="training-detail-' + esc(row.id) + '" hidden><td colspan="4" style="background:#f8fafc;padding:12px"><strong>Rincian materi — ' + esc(row.name) + '</strong><div style="overflow-x:auto"><table style="width:100%;margin-top:8px"><thead><tr><th>Materi</th><th>Status</th><th>Tanggal selesai</th></tr></thead><tbody>' + detailRows + '</tbody></table></div></td></tr>';
+      }).join('');
+      listEl.innerHTML = '<table class="admin-table" style="width:100%;margin-top:12px"><thead><tr><th>Member</th><th>Materi Selesai</th><th>Progres</th><th>Aksi</th></tr></thead><tbody>' + tableRows + '</tbody></table>';
+      if (listEl.dataset.detailHandler !== 'ready') {
+        listEl.addEventListener('click', event => {
+          const button = event.target.closest('[data-training-member-detail]');
+          if (!button) return;
+          const detail = document.getElementById('training-detail-' + button.dataset.trainingMemberDetail);
+          if (!detail) return;
+          const opening = detail.hidden;
+          detail.hidden = !opening;
+          button.textContent = opening ? 'Tutup Detail' : 'Detail';
+        });
+        listEl.dataset.detailHandler = 'ready';
+      }
     } catch (e) {
       messageEl.textContent = 'Laporan progres belum dapat dimuat: ' + e.message;
       listEl.innerHTML = '';
