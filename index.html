@@ -2060,6 +2060,7 @@ async function loadAffiliateCenter() {
     } catch (_) { return ''; }
   }
   let memberProgress = [];
+  let memberProfileName = '';
   async function loadMember(force) {
     const el = document.getElementById('memberTrainingList'); if (!el) return;
     el.textContent = 'Memuat materi training...';
@@ -2069,11 +2070,13 @@ async function loadAffiliateCenter() {
       const results = await Promise.all([
         api('content_categories?select=id,name,description,sort_order&is_active=eq.true&order=sort_order.asc'),
         api('training_contents?select=id,category_id,title,description,content_type,content_url,thumbnail_url,created_at&status=eq.published&order=sort_order.asc,created_at.desc'),
-        api('training_progress?select=training_content_id,is_completed,completed_at&user_id=eq.' + encodeURIComponent(userId))
+        api('training_progress?select=training_content_id,is_completed,completed_at&user_id=eq.' + encodeURIComponent(userId)),
+        api('profiles?select=full_name&id=eq.' + encodeURIComponent(userId))
       ]);
       categories = results[0] || [];
       materials = results[1] || [];
       memberProgress = results[2] || [];
+      memberProfileName = results[3]?.[0]?.full_name || '';
       fillCategorySelects();
       await renderMember();
     } catch (e) {
@@ -2112,7 +2115,7 @@ async function loadAffiliateCenter() {
     const completed = materials.filter(m => completedIds.has(m.id)).length;
     const percent = total ? Math.round(completed / total * 100) : 0;
     const progressEl = document.getElementById('memberTrainingProgress');
-    if (progressEl) progressEl.innerHTML = '<strong>Progres belajar: ' + completed + ' dari ' + total + ' materi (' + percent + '%)</strong><div style="height:9px;background:#dbe5ef;border-radius:20px;overflow:hidden;margin-top:9px"><div style="height:100%;width:' + percent + '%;background:#0d9488;border-radius:20px;transition:width .2s"></div></div>';
+    if (progressEl) progressEl.innerHTML = '<strong>Progres belajar: ' + completed + ' dari ' + total + ' materi (' + percent + '%)</strong><div style="height:9px;background:#dbe5ef;border-radius:20px;overflow:hidden;margin-top:9px"><div style="height:100%;width:' + percent + '%;background:#0d9488;border-radius:20px;transition:width .2s"></div></div>' + (total > 0 && completed === total ? '<div style="margin-top:12px"><button type="button" class="primary-btn" id="downloadTrainingCertificate">Unduh Sertifikat Training</button><p class="section-sub" style="margin:6px 0 0">Sertifikat tersedia setelah seluruh materi yang dipublikasikan diselesaikan.</p></div>' : '');
     if (!rows.length) { el.textContent = 'Belum ada materi yang dipublikasikan untuk kategori ini.'; return; }
     el.innerHTML = '<p class="section-sub">Menyiapkan materi...</p>';
     const cards = await Promise.all(rows.map(async m => {
@@ -2134,6 +2137,45 @@ async function loadAffiliateCenter() {
     }));
     el.innerHTML = cards.join('');
   }
+  function openTrainingCertificate() {
+    const userId = currentMemberId();
+    const total = materials.length;
+    const completedIds = new Set(memberProgress.filter(p => p.is_completed).map(p => p.training_content_id));
+    const completed = materials.filter(m => completedIds.has(m.id)).length;
+    if (!userId || total === 0 || completed !== total) {
+      showToast('Selesaikan seluruh materi training sebelum mengunduh sertifikat.');
+      return;
+    }
+    const popup = window.open('', '_blank');
+    if (!popup) {
+      showToast('Izinkan pop-up untuk membuka sertifikat.');
+      return;
+    }
+    const name = memberProfileName || 'Member DIGITALCOREVISION';
+    const dateValues = memberProgress.filter(p => p.is_completed && materials.some(m => m.id === p.training_content_id)).map(p => p.completed_at).filter(Boolean).map(value => new Date(value).getTime()).filter(Number.isFinite);
+    const completedAt = dateValues.length ? new Date(Math.max(...dateValues)) : new Date();
+    const dateText = completedAt.toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'});
+    const year = completedAt.getFullYear();
+    let certificateCode = '';
+    try {
+      const storageKey = 'dcv_training_certificate_' + userId;
+      certificateCode = localStorage.getItem(storageKey) || '';
+      if (!certificateCode) {
+        certificateCode = 'DCV-TR-' + year + '-' + (crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'').slice(0,12).toUpperCase() : Math.random().toString(36).slice(2,14).toUpperCase());
+        localStorage.setItem(storageKey, certificateCode);
+      }
+    } catch (_) {
+      certificateCode = 'DCV-TR-' + year + '-' + userId.replace(/-/g,'').slice(0,12).toUpperCase();
+    }
+    const safe = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const trainingTitles = materials.map(item => item.title).filter(Boolean);
+    popup.document.open();
+    popup.document.write('<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sertifikat Training DIGITALCOREVISION</title><style>*{box-sizing:border-box}body{margin:0;background:#eef3f8;color:#102b49;font-family:Arial,sans-serif}.sheet{width:1000px;max-width:calc(100% - 32px);min-height:700px;margin:32px auto;padding:58px;border:12px double #0e7490;background:#fff;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}.brand{font-size:18px;font-weight:800;letter-spacing:4px;color:#0e7490}.eyebrow{margin-top:44px;letter-spacing:5px;font-size:14px;color:#64748b}.heading{font-family:Georgia,serif;font-size:52px;margin:12px 0;color:#12385b}.intro{font-size:18px;color:#475569}.name{font-family:Georgia,serif;font-size:38px;font-weight:bold;margin:18px 0 24px;border-bottom:2px solid #c69b43;padding:0 28px 12px}.desc{font-size:17px;line-height:1.7;max-width:720px}.course{font-weight:bold;color:#0e7490}.footer{width:100%;display:flex;justify-content:space-between;align-items:end;margin-top:60px;font-size:12px;color:#64748b}.seal{border:2px solid #c69b43;border-radius:50%;width:88px;height:88px;display:flex;align-items:center;justify-content:center;color:#a87922;font-weight:bold;letter-spacing:2px}@media print{body{background:#fff}.sheet{width:100%;max-width:none;min-height:0;height:190mm;margin:0;border-width:10px;page-break-inside:avoid}@page{size:landscape;margin:10mm}.no-print{display:none!important}}@media(max-width:650px){.sheet{padding:28px 18px;min-height:560px}.heading{font-size:36px}.name{font-size:28px}.footer{gap:20px;flex-wrap:wrap}}</style></head><body><main class="sheet"><div class="brand">DIGITALCOREVISION 2.0</div><div class="eyebrow">SERTIFIKAT PENYELESAIAN</div><h1 class="heading">Certificate of Completion</h1><p class="intro">Dengan ini menyatakan bahwa</p><div class="name">' + safe(name) + '</div><p class="desc">telah menyelesaikan seluruh materi training yang dipublikasikan pada program pembelajaran <span class="course">DIGITALCOREVISION</span>.</p><p class="desc">Diselesaikan pada <strong>' + safe(dateText) + '</strong>.</p><div class="footer"><div style="text-align:left"><strong>Nomor Sertifikat</strong><br>' + safe(certificateCode) + '<br><br>DigitalCorevision Learning</div><div class="seal">DCV<br>2.0</div></div></main><div class="no-print" style="text-align:center;margin:0 0 28px"><button onclick="window.print()" style="padding:12px 22px;background:#12385b;color:white;border:0;border-radius:8px;font-weight:bold;cursor:pointer">Cetak / Simpan sebagai PDF</button></div><script>window.addEventListener("load",()=>setTimeout(()=>window.print(),350));<\/script></body></html>');
+    popup.document.close();
+  }
+  document.getElementById('memberTrainingProgress')?.addEventListener('click', event => {
+    if (event.target.closest('#downloadTrainingCertificate')) openTrainingCertificate();
+  });
   document.getElementById('memberTrainingList')?.addEventListener('click', async e => {
     const btn = e.target.closest('[data-complete-training]');
     if (!btn) return;
