@@ -210,6 +210,24 @@ body.admin-authenticated .member-nav [data-page="premium"] { display:none; }
     display: none !important;
 }
 
+/* AFFILIATE REFERRAL LIST - RESPONSIVE */
+#affiliate, #affiliate .content-grid, #affiliate .card, #affiliateReferralList { min-width:0; max-width:100%; }
+#affiliateReferralCode, #affiliateReferralLink { overflow-wrap:anywhere; word-break:break-word; }
+.affiliate-referral-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:10px; margin-top:12px; width:100%; }
+.affiliate-referral-card { min-width:0; border:1px solid #e2e8f0; border-radius:12px; padding:13px; background:light-dark(#fff,#172235); }
+.affiliate-referral-name { display:block; font-size:14px; line-height:1.4; overflow-wrap:anywhere; margin-bottom:9px; }
+.affiliate-referral-details { display:grid; gap:8px; }
+.affiliate-referral-field { min-width:0; display:grid; gap:3px; }
+.affiliate-referral-field span { color:#64748b; font-size:10px; }
+.affiliate-referral-field b { font-size:12px; font-weight:600; overflow-wrap:anywhere; word-break:break-word; }
+@media (max-width:768px) {
+  #affiliate .content-grid { grid-template-columns:minmax(0,1fr); gap:10px; }
+  #affiliate .content-grid > .card { grid-column:1/-1 !important; width:100%; }
+  #affiliate .page-head, #affiliate .card { min-width:0; }
+  #affiliateReferralCode, #affiliateReferralLink { line-height:1.6; font-size:12px; }
+  .affiliate-referral-cards { grid-template-columns:minmax(0,1fr); }
+}
+ 
 /* RESPONSIVE MOBILE - DIGITALCOREVISION 2.0 */
 html { width:100%; overflow-x:hidden; }
 body { width:100%; min-width:320px; overflow-x:hidden; }
@@ -1732,49 +1750,37 @@ async function loadAffiliateCenter() {
       return;
     }
 
-    const table = document.createElement('table');
-    table.style.cssText = 'width:100%;border-collapse:collapse;font-size:13px;margin-top:10px';
-    const thead = document.createElement('thead');
-    const headerRow = document.createElement('tr');
-
-    ['Nama Member', 'Email', 'Kode Referral', 'Tanggal Bergabung'].forEach(function (label) {
-      const th = document.createElement('th');
-      th.textContent = label;
-      th.style.cssText = 'text-align:left;padding:10px 8px;border-bottom:1px solid #dbe5ef';
-      headerRow.appendChild(th);
-    });
-
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
-
-    const tbody = document.createElement('tbody');
+    const referralCards = document.createElement('div');
+    referralCards.className = 'affiliate-referral-cards';
     referrals.forEach(function (referral) {
-      const row = document.createElement('tr');
-
-      const nameCell = document.createElement('td');
-      nameCell.textContent = referral.full_name || '-';
-
-      const emailCell = document.createElement('td');
-      emailCell.textContent = referral.email || '-';
-
-      const codeCell = document.createElement('td');
-      codeCell.textContent = referral.referral_code_used || '-';
-
-      const dateCell = document.createElement('td');
-      dateCell.textContent = referral.created_at
-        ? new Date(referral.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-        : '-';
-
-      [nameCell, emailCell, codeCell, dateCell].forEach(function (cell) {
-        cell.style.cssText = 'padding:10px 8px;border-bottom:1px solid #edf2f7;vertical-align:top';
-        row.appendChild(cell);
+      const card = document.createElement('article');
+      card.className = 'affiliate-referral-card';
+      const name = document.createElement('strong');
+      name.className = 'affiliate-referral-name';
+      name.textContent = referral.full_name || 'Nama belum diatur';
+      const details = document.createElement('div');
+      details.className = 'affiliate-referral-details';
+      const fields = [
+        ['Email', referral.email || '-'],
+        ['Kode Referral', referral.referral_code_used || '-'],
+        ['Tanggal Bergabung', referral.created_at
+          ? new Date(referral.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+          : '-']
+      ];
+      fields.forEach(function ([label, value]) {
+        const field = document.createElement('div');
+        field.className = 'affiliate-referral-field';
+        const caption = document.createElement('span');
+        caption.textContent = label;
+        const content = document.createElement('b');
+        content.textContent = value;
+        field.append(caption, content);
+        details.appendChild(field);
       });
-
-      tbody.appendChild(row);
+      card.append(name, details);
+      referralCards.appendChild(card);
     });
-
-    table.appendChild(tbody);
-    listBox.replaceChildren(table);
+    listBox.replaceChildren(referralCards);
   } catch (error) {
     codeBox.textContent = 'Gagal memuat data.';
     linkBox.textContent = 'Gagal memuat link referral.';
