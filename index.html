@@ -169,6 +169,17 @@ body.admin-authenticated .member-nav [data-page="premium"] { display:none; }
 .admin-metric strong { display:block; font-size:28px; font-weight:850; } .admin-metric span { color:#6b7280; font-size:12px; }
 .admin-panel-card { background:#fff; border:1px solid #e5e7eb; border-radius:18px; padding:24px; margin-bottom:20px; box-shadow:0 4px 16px #11182708; }
 .admin-kpis { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+
+.admin-growth-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
+.admin-growth-chart { display:flex; align-items:flex-end; gap:10px; height:190px; padding:20px 4px 26px; border-bottom:1px solid #e5e7eb; }
+.admin-growth-month { flex:1; min-width:0; height:100%; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:7px; }
+.admin-growth-value { font-size:10px; font-weight:800; color:#374151; }
+.admin-growth-bar { width:min(34px,75%); min-height:3px; border-radius:6px 6px 2px 2px; background:linear-gradient(180deg,#0d9488,#5eead4); transition:height .25s; }
+.admin-growth-bar.premium { background:linear-gradient(180deg,#4f46e5,#a5b4fc); }
+.admin-growth-label { font-size:9px; color:#6b7280; white-space:nowrap; }
+.admin-growth-empty { width:100%; text-align:center; align-self:center; color:#9ca3af; font-size:11px; }
+@media(max-width:800px) { .admin-growth-grid { grid-template-columns:1fr; } }
+
 .admin-kpi { background:#f9fafb; border:1px solid #e5e7eb; border-radius:17px; padding:20px 12px; text-align:center; }
 .admin-ring { width:132px; height:132px; border-radius:50%; margin:0 auto 15px; display:grid; place-items:center; background:conic-gradient(#4f46e5 var(--progress),#e5e7eb 0); position:relative; }
 .admin-ring:before { content:""; position:absolute; inset:11px; background:#f9fafb; border-radius:50%; }
@@ -507,6 +518,7 @@ body.admin-authenticated .member-nav [data-page="premium"] { display:none; }
             <h2>Dashboard</h2>
             <div class="admin-license"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><strong style="font-size:17px;color:#15803d">✓ Status Lisensi: Active</strong><p style="font-size:12px;color:#6b7280;margin:6px 0">Status lisensi dan masa aktif platform akan ditampilkan di sini.</p></div><button class="primary-btn" onclick="showToast('Fitur backup akan dihubungkan pada tahap backend.')">↓ &nbsp; Download Backup DB</button></div><p style="font-size:10px;color:#6b7280;border-top:1px solid #e5e7eb;padding-top:10px;margin:10px 0 0">Lakukan pencadangan database secara rutin untuk menjaga keamanan data platform.</p></div>
             <div class="admin-metrics"><div class="admin-metric"><strong id="adminDashTotalMembers">—</strong><span>Total Member</span></div><div class="admin-metric"><strong id="adminDashPremiumActive">—</strong><span>Premium Aktif</span></div><div class="admin-metric"><strong id="adminDashPendingRequests">—</strong><span>Request Pending</span></div><div class="admin-metric"><strong id="adminDashTotalLeads">—</strong><span>Total Leads</span></div></div>
+            <div class="admin-panel-card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px"><div><h3 style="font-size:17px;margin:0 0 5px">Pertumbuhan Platform</h3><p style="font-size:11px;color:#6b7280;margin:0">Tren pendaftaran member dan aktivitas Premium selama 6 bulan terakhir.</p></div><span class="status">Data Supabase</span></div><div class="admin-growth-grid"><div><h4 style="font-size:13px;margin:0 0 4px">Member Baru</h4><p class="section-sub" style="margin:0">Berdasarkan tanggal pendaftaran</p><div id="adminMemberGrowthChart" class="admin-growth-chart"><div class="admin-growth-empty">Memuat grafik...</div></div></div><div><h4 style="font-size:13px;margin:0 0 4px">Aktivitas Premium</h4><p class="section-sub" style="margin:0">Aktivasi dan perpanjangan Premium</p><div id="adminPremiumGrowthChart" class="admin-growth-chart"><div class="admin-growth-empty">Memuat grafik...</div></div></div></div></div>
             <div class="admin-panel-card"><div style="border-bottom:1px solid #e5e7eb;padding-bottom:17px;margin-bottom:20px"><div style="font-size:10px;font-weight:900;color:#4f46e5;letter-spacing:2px;text-transform:uppercase">◉ Health Check: Kinerja Sistem</div><h3 style="font-size:25px;margin:7px 0">Indikator <span style="color:#4f46e5">Keberhasilan</span> Jaringan</h3><p style="font-size:11px;color:#6b7280;margin:0">KPI akan dihitung dari aktivitas member dan jaringan yang tercatat di database.</p></div>
               <div class="admin-kpis"><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Aktif Login</b><small>Login 7 hari terakhir · Target 70%</small></div><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Promosi Referral</b><small>Member yang memperoleh leads · Target 50%</small></div><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Duplikasi Sukses</b><small>Member dengan minimal 5 leads · Target 40%</small></div></div>
             </div>
@@ -723,12 +735,12 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
     try {
       const loginSince = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const [profilesResponse, membershipsResponse, adminsResponse, requestsResponse, leadsResponse, historyResponse, leadsOwnersResponse, loginActivityResponse] = await Promise.all([
-        fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email&order=created_at.desc', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email,created_at&order=created_at.desc', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/member_memberships?select=member_id,membership_type,premium_expires_at', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/super_admins?select=user_id', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/premium_upgrade_requests?select=id,status&status=eq.pending', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/leads?select=id', { method: 'HEAD', headers: { ...headers, Prefer: 'count=exact' } }),
-        fetch(SUPABASE_URL + '/rest/v1/membership_history?select=member_id,event_type,created_at,new_expires_at&event_type=in.(activation,renewal)&order=created_at.desc&limit=5', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/membership_history?select=member_id,event_type,created_at,new_expires_at&event_type=in.(activation,renewal)&created_at=gte.' + encodeURIComponent(new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1).toISOString()) + '&order=created_at.asc', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/leads?select=owner_id', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/member_login_activity?select=user_id&logged_in_at=gte.' + encodeURIComponent(loginSince), { headers })
       ]);
@@ -746,6 +758,15 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
         readJson(leadsOwnersResponse, 'Pemilik Leads'),
         readJson(loginActivityResponse, 'Aktivitas login')
       ]);
+      const monthKeys = Array.from({length:6}, (_, index) => { const date = new Date(); date.setDate(1); date.setHours(0,0,0,0); date.setMonth(date.getMonth() - (5-index)); return { key: date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0'), label: date.toLocaleDateString('id-ID',{month:'short'}) }; });
+      const memberMonthly = new Map(monthKeys.map(month => [month.key,0]));
+      (profiles || []).forEach(profile => { if (!profile.created_at) return; const date = new Date(profile.created_at); const key = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0'); if (memberMonthly.has(key)) memberMonthly.set(key, memberMonthly.get(key)+1); });
+      const premiumMonthly = new Map(monthKeys.map(month => [month.key,0]));
+      (history || []).forEach(item => { if (!item.created_at) return; const date = new Date(item.created_at); const key = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0'); if (premiumMonthly.has(key)) premiumMonthly.set(key, premiumMonthly.get(key)+1); });
+      const renderGrowthChart = (elementId, monthly, barClass) => { const element = document.getElementById(elementId); if (!element) return; const max = Math.max(1, ...monthKeys.map(month => monthly.get(month.key) || 0)); element.replaceChildren(); monthKeys.forEach(month => { const value = monthly.get(month.key) || 0; const wrap = document.createElement('div'); wrap.className = 'admin-growth-month'; const count = document.createElement('span'); count.className = 'admin-growth-value'; count.textContent = value; const bar = document.createElement('div'); bar.className = 'admin-growth-bar' + (barClass ? ' ' + barClass : ''); bar.style.height = Math.max(value ? 8 : 3, value / max * 125) + 'px'; bar.title = month.label + ': ' + value; const label = document.createElement('span'); label.className = 'admin-growth-label'; label.textContent = month.label; wrap.append(count,bar,label); element.appendChild(wrap); }); };
+      renderGrowthChart('adminMemberGrowthChart', memberMonthly, '');
+      renderGrowthChart('adminPremiumGrowthChart', premiumMonthly, 'premium');
+
       const adminIds = new Set((admins || []).map(row => row.user_id));
       const memberProfiles = (profiles || []).filter(row => !adminIds.has(row.id));
       const membershipMap = new Map((memberships || []).map(row => [row.member_id, row]));
