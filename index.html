@@ -618,27 +618,68 @@ function filterMembers() {
   const query = document.getElementById('memberSearch').value.toLowerCase();
   document.querySelectorAll('#memberTable tbody tr').forEach(row => row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none');
 }
-function loadDashboardDisplaySettings() {
-  const defaults = { eyebrow: 'DigitalCoreVision', title: 'ESKAYVIE', description: 'Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja' };
-  let settings = defaults;
-  try { settings = { ...defaults, ...JSON.parse(localStorage.getItem('dcv_dashboard_display') || '{}') }; } catch (error) {}
-  document.querySelector('.feature-banner .eyebrow').textContent = settings.eyebrow;
-  document.querySelector('.feature-banner h2').textContent = settings.title;
-  document.querySelector('.feature-banner p').textContent = settings.description;
-  document.getElementById('bannerEyebrowInput').value = settings.eyebrow;
-  document.getElementById('bannerTitleInput').value = settings.title;
-  document.getElementById('bannerDescriptionInput').value = settings.description;
+const dashboardDisplayDefaults = { eyebrow: 'DigitalCoreVision', title: 'ESKAYVIE', description: 'Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja' };
+function applyDashboardDisplaySettings(settings) {
+  const bannerEyebrow = document.querySelector('.feature-banner .eyebrow');
+  const bannerTitle = document.querySelector('.feature-banner h2');
+  const bannerDescription = document.querySelector('.feature-banner p');
+  if (bannerEyebrow) bannerEyebrow.textContent = settings.eyebrow;
+  if (bannerTitle) bannerTitle.textContent = settings.title;
+  if (bannerDescription) bannerDescription.textContent = settings.description;
+  const eyebrowInput = document.getElementById('bannerEyebrowInput');
+  const titleInput = document.getElementById('bannerTitleInput');
+  const descriptionInput = document.getElementById('bannerDescriptionInput');
+  if (eyebrowInput) eyebrowInput.value = settings.eyebrow;
+  if (titleInput) titleInput.value = settings.title;
+  if (descriptionInput) descriptionInput.value = settings.description;
 }
-function saveDashboardDisplaySettings() {
+async function loadDashboardDisplaySettings(accessToken) {
+  applyDashboardDisplaySettings(dashboardDisplayDefaults);
+  const token = accessToken || sessionStorage.getItem('dcv_access_token');
+  if (!token) return;
+  try {
+    const response = await fetch('https://slygdkibtwgepjxsndjo.supabase.co/rest/v1/dashboard_display_settings?id=eq.1&select=eyebrow,title,description', {
+      headers: { apikey: 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7', Authorization: 'Bearer ' + token }
+    });
+    if (!response.ok) throw new Error('Gagal memuat pengaturan (' + response.status + ').');
+    const rows = await response.json();
+    if (rows && rows.length) applyDashboardDisplaySettings({ ...dashboardDisplayDefaults, ...rows[0] });
+  } catch (error) {
+    console.warn('Pengaturan dashboard belum dapat dimuat dari Supabase:', error);
+  }
+}
+async function saveDashboardDisplaySettings() {
   const settings = {
     eyebrow: document.getElementById('bannerEyebrowInput').value.trim(),
     title: document.getElementById('bannerTitleInput').value.trim(),
     description: document.getElementById('bannerDescriptionInput').value.trim()
   };
   if (!settings.eyebrow || !settings.title || !settings.description) { showToast('Semua teks banner wajib diisi.'); return; }
-  localStorage.setItem('dcv_dashboard_display', JSON.stringify(settings));
-  loadDashboardDisplaySettings();
-  showToast('Pengaturan tampilan dashboard disimpan di browser ini.');
+  const token = sessionStorage.getItem('dcv_access_token');
+  if (!token || !document.body.classList.contains('admin-authenticated')) {
+    showToast('Hanya Super Admin yang dapat menyimpan pengaturan tampilan.');
+    return;
+  }
+  try {
+    const response = await fetch('https://slygdkibtwgepjxsndjo.supabase.co/rest/v1/dashboard_display_settings?on_conflict=id', {
+      method: 'POST',
+      headers: {
+        apikey: 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7',
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify({ id: 1, ...settings, updated_at: new Date().toISOString() })
+    });
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(detail || 'Gagal menyimpan (' + response.status + ').');
+    }
+    await loadDashboardDisplaySettings(token);
+    showToast('Pengaturan dashboard berhasil disimpan dan dibagikan ke semua member.');
+  } catch (error) {
+    showToast('Gagal menyimpan pengaturan: ' + error.message);
+  }
 }
 function setMemberWelcomeName(name) {
   const cleanName = (name || '').trim();
@@ -1471,6 +1512,7 @@ enterMemberApp(
     loginScreen.style.display = 'none';
     document.body.classList.remove('admin-authenticated');
     document.body.classList.add('member-authenticated');
+    loadDashboardDisplaySettings(token);
     document.getElementById('systemSettingsCard').hidden = true;
     window.dcvMembershipStatus = 'checking'; applyMemberFeatureAccess(false);
     navigate('dashboard');
@@ -2273,6 +2315,7 @@ async function loadAffiliateCenter() {
     loginScreen.style.display = 'none';
     document.body.classList.remove('member-authenticated');
     document.body.classList.add('admin-authenticated');
+    loadDashboardDisplaySettings(token);
     document.getElementById('systemSettingsCard').hidden = false;
     // Setelah Super Admin berhasil diverifikasi, buka Dashboard dan muat statistik serta pengingat.
     navigate('dashboard');
