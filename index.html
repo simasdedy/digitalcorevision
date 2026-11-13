@@ -235,6 +235,12 @@ main { max-width:1200px; padding:42px 16px 50px; }
     <main>
       <section class="page active" id="dashboard">
         <h1 class="member-welcome" id="memberWelcome">Selamat Datang!</h1>
+        <div class="card" id="memberMembershipStatusCard" hidden style="margin:14px 0;border-left:4px solid #0d9488">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+            <div><div class="metric-label">STATUS MEMBERSHIP</div><strong id="memberMembershipStatusTitle" style="display:block;font-size:18px;margin-top:5px">Memeriksa membership...</strong><div id="memberMembershipStatusDetail" class="section-sub" style="margin-top:6px">Status akun sedang diperiksa dari database.</div></div>
+            <span id="memberMembershipStatusBadge" class="status">Memeriksa...</span>
+          </div>
+        </div>
         <div class="feature-banner"><div><span class="eyebrow">DigitalCoreVision</span><h2>ESKAYVIE</h2><p>Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja</p></div><button class="watch-btn" onclick="showToast('Video pengenalan akan dibuka saat konten dihubungkan.')">▶ &nbsp; TONTON SEKARANG</button></div>
         <div class="feature-image">Area video / banner utama ESKAYVIE<br><small>Gambar referensi dapat dipasang pada tahap integrasi konten</small></div>
         <div class="member-shortcuts"><div class="shortcut"><strong>Konten Pembelajaran</strong><span>Akses materi dan panduan bisnis digital.</span></div><div class="shortcut"><strong>Training</strong><span>Pelajari strategi membangun network.</span></div><div class="shortcut"><strong>Data Leads</strong><span>Kelola prospek dan aktivitas follow-up.</span></div></div>
@@ -1040,6 +1046,59 @@ enterMemberApp(
       memberSubmitButton.textContent = memberSignupMode ? 'Buat Akun Member' : 'Login Member';
     }
   });
+  async function loadMemberMembershipStatus(token) {
+    const card = document.getElementById('memberMembershipStatusCard');
+    const title = document.getElementById('memberMembershipStatusTitle');
+    const detail = document.getElementById('memberMembershipStatusDetail');
+    const badge = document.getElementById('memberMembershipStatusBadge');
+    if (!card || !title || !detail || !badge) return;
+    card.hidden = false;
+    title.textContent = 'Memeriksa membership...';
+    detail.textContent = 'Mengambil status membership dari Supabase.';
+    badge.textContent = 'Memeriksa...';
+    try {
+      const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
+      const userResponse = await fetch(SUPABASE_URL + '/auth/v1/user', { headers });
+      const user = await userResponse.json();
+      if (!userResponse.ok || !user.id) throw new Error(user.message || 'Sesi akun tidak dapat diverifikasi.');
+      const membershipResponse = await fetch(
+        SUPABASE_URL + '/rest/v1/member_memberships?select=membership_type,premium_started_at,premium_expires_at&member_id=eq.' + encodeURIComponent(user.id) + '&limit=1',
+        { headers }
+      );
+      const memberships = await membershipResponse.json();
+      if (!membershipResponse.ok) throw new Error(memberships.message || memberships.error || 'Gagal mengambil status membership.');
+      const membership = memberships[0] || null;
+      const expiry = membership && membership.premium_expires_at ? new Date(membership.premium_expires_at) : null;
+      const hasValidExpiry = Boolean(expiry && !Number.isNaN(expiry.getTime()));
+      const isPremiumActive = Boolean(membership && membership.membership_type === 'premium' && hasValidExpiry && expiry.getTime() > Date.now());
+      if (isPremiumActive) {
+        title.textContent = 'Premium Aktif';
+        detail.textContent = 'Akses Premium berlaku sampai ' + expiry.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) + '.';
+        badge.textContent = 'PREMIUM';
+        badge.className = 'status';
+        card.style.borderLeftColor = '#0d9488';
+      } else if (membership && membership.membership_type === 'premium' && hasValidExpiry) {
+        title.textContent = 'Free Member';
+        detail.textContent = 'Masa Premium berakhir pada ' + expiry.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) + '. Akun menggunakan status Free; riwayat membership dan jaringan referral tetap tersimpan.';
+        badge.textContent = 'FREE · EXPIRED';
+        badge.className = 'status pending';
+        card.style.borderLeftColor = '#d97706';
+      } else {
+        title.textContent = 'Free Member';
+        detail.textContent = 'Akun Anda menggunakan akses Free Member. Anda dapat memperpanjang Premium melalui Super Admin.';
+        badge.textContent = 'FREE';
+        badge.className = 'status';
+        card.style.borderLeftColor = '#64748b';
+      }
+    } catch (error) {
+      title.textContent = 'Status membership belum dapat dimuat';
+      detail.textContent = error.message || 'Periksa koneksi dan kebijakan RLS Supabase.';
+      badge.textContent = 'BELUM TERVERIFIKASI';
+      badge.className = 'status pending';
+      card.style.borderLeftColor = '#d97706';
+    }
+  }
+
   function enterMemberApp(token, email, fullName) {
     sessionStorage.setItem('dcv_access_token', token);
     sessionStorage.setItem('dcv_member_email', email || 'Member');
@@ -1070,6 +1129,7 @@ enterMemberApp(
     document.body.classList.add('member-authenticated');
     document.getElementById('systemSettingsCard').hidden = true;
     navigate('dashboard');
+    loadMemberMembershipStatus(token);
     loadAffiliateCenter();
   }
 
