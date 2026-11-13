@@ -2289,6 +2289,47 @@ async function loadAffiliateCenter() {
             actions.appendChild(whatsappAction);
           }
           if (!isSuperAdminView) {
+            const rescheduleAction = document.createElement('button');
+            rescheduleAction.type = 'button';
+            rescheduleAction.className = 'secondary-btn';
+            rescheduleAction.textContent = 'Jadwalkan Ulang';
+            rescheduleAction.addEventListener('click', async () => {
+              const token = sessionStorage.getItem('dcv_access_token');
+              if (!token) { alert('Sesi berakhir. Silakan login kembali.'); return; }
+              const suggestedDate = new Date();
+              suggestedDate.setDate(suggestedDate.getDate() + 1);
+              suggestedDate.setHours(10, 0, 0, 0);
+              const suggestedValue = typeof toLocalDateTimeInput === 'function'
+                ? toLocalDateTimeInput(suggestedDate.toISOString())
+                : '';
+              const newSchedule = window.prompt('Masukkan jadwal follow-up baru dengan format YYYY-MM-DDTHH:mm (contoh: 2026-11-14T10:00).', suggestedValue);
+              if (newSchedule === null) return;
+              const parsedSchedule = new Date(newSchedule);
+              if (!/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}$/.test(newSchedule) || Number.isNaN(parsedSchedule.getTime()) || parsedSchedule <= new Date()) {
+                alert('Jadwal tidak valid. Masukkan tanggal dan waktu di masa mendatang dengan format YYYY-MM-DDTHH:mm.');
+                return;
+              }
+              rescheduleAction.disabled = true;
+              rescheduleAction.textContent = 'Menyimpan...';
+              try {
+                const updateResponse = await fetch(SUPABASE_URL + '/rest/v1/leads?id=eq.' + encodeURIComponent(item.id), {
+                  method: 'PATCH',
+                  headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+                  body: JSON.stringify({ status: 'follow_up', follow_up_at: parsedSchedule.toISOString() })
+                });
+                if (!updateResponse.ok) {
+                  const updateError = await updateResponse.json();
+                  throw new Error(updateError.message || updateError.details || 'Gagal menjadwalkan ulang follow-up.');
+                }
+                await recordLeadActivity(item.id, 'updated', 'Jadwal follow-up diatur ulang menjadi ' + parsedSchedule.toLocaleString('id-ID') + '.', { from: item.follow_up_at, to: parsedSchedule.toISOString(), source: 'dashboard_follow_up' });
+                await loadDashboardFollowUps();
+              } catch (error) {
+                alert(error.message || 'Gagal menjadwalkan ulang follow-up.');
+                rescheduleAction.disabled = false;
+                rescheduleAction.textContent = 'Jadwalkan Ulang';
+              }
+            });
+            actions.appendChild(rescheduleAction);
             const contactedAction = document.createElement('button');
             contactedAction.type = 'button';
             contactedAction.className = 'secondary-btn';
