@@ -758,16 +758,16 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
         readJson(leadsOwnersResponse, 'Pemilik Leads'),
         readJson(loginActivityResponse, 'Aktivitas login')
       ]);
+      const adminIds = new Set((admins || []).map(row => row.user_id));
       const monthKeys = Array.from({length:6}, (_, index) => { const date = new Date(); date.setDate(1); date.setHours(0,0,0,0); date.setMonth(date.getMonth() - (5-index)); return { key: date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0'), label: date.toLocaleDateString('id-ID',{month:'short'}) }; });
       const memberMonthly = new Map(monthKeys.map(month => [month.key,0]));
-      (profiles || []).forEach(profile => { if (!profile.created_at) return; const date = new Date(profile.created_at); const key = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0'); if (memberMonthly.has(key)) memberMonthly.set(key, memberMonthly.get(key)+1); });
+      (profiles || []).filter(profile => !adminIds.has(profile.id)).forEach(profile => { if (!profile.created_at) return; const date = new Date(profile.created_at); const key = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0'); if (memberMonthly.has(key)) memberMonthly.set(key, memberMonthly.get(key)+1); });
       const premiumMonthly = new Map(monthKeys.map(month => [month.key,0]));
       (history || []).forEach(item => { if (!item.created_at) return; const date = new Date(item.created_at); const key = date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0'); if (premiumMonthly.has(key)) premiumMonthly.set(key, premiumMonthly.get(key)+1); });
       const renderGrowthChart = (elementId, monthly, barClass) => { const element = document.getElementById(elementId); if (!element) return; const max = Math.max(1, ...monthKeys.map(month => monthly.get(month.key) || 0)); element.replaceChildren(); monthKeys.forEach(month => { const value = monthly.get(month.key) || 0; const wrap = document.createElement('div'); wrap.className = 'admin-growth-month'; const count = document.createElement('span'); count.className = 'admin-growth-value'; count.textContent = value; const bar = document.createElement('div'); bar.className = 'admin-growth-bar' + (barClass ? ' ' + barClass : ''); bar.style.height = Math.max(value ? 8 : 3, value / max * 125) + 'px'; bar.title = month.label + ': ' + value; const label = document.createElement('span'); label.className = 'admin-growth-label'; label.textContent = month.label; wrap.append(count,bar,label); element.appendChild(wrap); }); };
       renderGrowthChart('adminMemberGrowthChart', memberMonthly, '');
       renderGrowthChart('adminPremiumGrowthChart', premiumMonthly, 'premium');
 
-      const adminIds = new Set((admins || []).map(row => row.user_id));
       const memberProfiles = (profiles || []).filter(row => !adminIds.has(row.id));
       const membershipMap = new Map((memberships || []).map(row => [row.member_id, row]));
       const now = Date.now();
