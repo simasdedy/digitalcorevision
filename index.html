@@ -292,6 +292,18 @@ button, .primary-btn, .secondary-btn { touch-action:manipulation; }
   .page-head > button { font-size:11px; padding:9px 10px; }
 }
 
+
+/* Lead actions: keep every action visible on narrow screens */
+.lead-action-buttons { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; min-width:170px; }
+.lead-action-buttons button { width:100%; min-width:0; white-space:normal; overflow-wrap:anywhere; }
+@media(max-width:768px) {
+  #leadList { width:100%; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  #leadList table { min-width:760px; }
+  #leadList td:last-child { min-width:190px; white-space:normal !important; }
+  .lead-action-buttons { grid-template-columns:repeat(2,minmax(0,1fr)); min-width:170px; }
+  .lead-action-buttons button { min-height:40px; padding:8px 5px !important; font-size:11px !important; }
+}
+
 </style>
 </head>
 <body>
@@ -1926,7 +1938,10 @@ async function loadAffiliateCenter() {
         });
 
         const actionCell = document.createElement('td');
-        actionCell.style.cssText = 'padding:10px 8px;border-bottom:1px solid #edf2f7;white-space:nowrap';
+        actionCell.style.cssText = 'padding:10px 8px;border-bottom:1px solid #edf2f7;white-space:normal;vertical-align:top;min-width:190px';
+        const actionButtons = document.createElement('div');
+        actionButtons.className = 'lead-action-buttons';
+        actionButtons.style.cssText = 'display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;min-width:170px';
         const whatsappButton = document.createElement('button');
         whatsappButton.type = 'button';
         whatsappButton.className = 'secondary-btn';
@@ -2142,7 +2157,11 @@ async function loadAffiliateCenter() {
             deleteButton.disabled = false;
           }
         });
-        actionCell.append(whatsappButton, copyMessageButton, detailButton, activityButton, editButton, deleteButton);
+        [whatsappButton, copyMessageButton, detailButton, activityButton, editButton, deleteButton].forEach(button => {
+          button.style.cssText = 'margin:0;width:100%;min-width:0;min-height:38px;padding:8px 6px;white-space:normal;line-height:1.25;font-size:11px';
+          actionButtons.appendChild(button);
+        });
+        actionCell.appendChild(actionButtons);
         row.appendChild(actionCell);
         body.appendChild(row);
       });
