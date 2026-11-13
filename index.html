@@ -405,6 +405,13 @@ button, .primary-btn, .secondary-btn { touch-action:manipulation; }
             <div class="card"><div class="metric-label">Tidak Tertarik</div><div class="metric-value" id="trackerNotInterested">—</div></div>
             <div class="card"><div class="metric-label">Aktivitas 30 Hari</div><div class="metric-value" id="trackerActivities30">—</div></div>
             <div class="card"><div class="metric-label">Chat WhatsApp Dibuka · 30 Hari</div><div class="metric-value" id="trackerWhatsApp30">—</div></div>
+            <div class="card"><div class="metric-label">Prospek Diproses</div><div class="metric-value" id="trackerProcessed">—</div><div class="section-sub">Sudah dihubungi, follow-up, tertarik, atau closing</div></div>
+            <div class="card"><div class="metric-label">Rasio Prospek Diproses</div><div class="metric-value" id="trackerProcessedRate">—</div><div class="section-sub">Dari total seluruh prospek</div></div>
+          </div>
+          <div class="card" style="margin-top:14px">
+            <div class="section-title">Ringkasan Pipeline Prospek</div>
+            <div class="section-sub" style="margin:4px 0 12px">Distribusi status prospek saat ini.</div>
+            <div id="trackerPipelineSummary" style="display:grid;gap:10px"></div>
           </div>
           <div class="section-title" style="margin-top:18px">Perkembangan Prospek · 6 Bulan Terakhir</div>
           <div id="trackerMonthlyChart" style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;align-items:end;min-height:170px;margin-top:14px">
@@ -2257,7 +2264,7 @@ async function loadAffiliateCenter() {
   }
 
   async function loadDashboardFollowUps() {
-    const ids = ['dashFollowOverdue','dashFollowToday','dashFollowTomorrow','dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList','trackerTotal','trackerNew','trackerInterested','trackerClosing','trackerConversion','trackerContacted','trackerFollowUp','trackerNotInterested','trackerActivities30','trackerWhatsApp30','trackerMonthlyChart','trackerMonthlyNote'];
+    const ids = ['dashFollowOverdue','dashFollowToday','dashFollowTomorrow','dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList','trackerTotal','trackerNew','trackerInterested','trackerClosing','trackerConversion','trackerContacted','trackerFollowUp','trackerNotInterested','trackerActivities30','trackerWhatsApp30','trackerProcessed','trackerProcessedRate','trackerPipelineSummary','trackerMonthlyChart','trackerMonthlyNote'];
     const nodes = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     const token = sessionStorage.getItem('dcv_access_token');
     if (!token) {
@@ -2301,6 +2308,28 @@ async function loadAffiliateCenter() {
       nodes.trackerNotInterested.textContent = notInterestedCount;
       nodes.trackerActivities30.textContent = recentActivities.length;
       nodes.trackerWhatsApp30.textContent = recentActivities.filter(activity => activity.activity_type === 'whatsapp_opened').length;
+      const processedCount = contactedCount + followUpCount + interestedCount + closingCount;
+      nodes.trackerProcessed.textContent = processedCount;
+      nodes.trackerProcessedRate.textContent = total ? ((processedCount / total) * 100).toFixed(1).replace('.', ',') + '%' : '0%';
+      const pipelineStages = [
+        { label: 'Baru', count: newCount, color: '#64748b' },
+        { label: 'Sudah Dihubungi', count: contactedCount, color: '#0d9488' },
+        { label: 'Follow-Up', count: followUpCount, color: '#2563eb' },
+        { label: 'Tertarik', count: interestedCount, color: '#7c3aed' },
+        { label: 'Closing', count: closingCount, color: '#16a34a' },
+        { label: 'Tidak Tertarik', count: notInterestedCount, color: '#dc2626' }
+      ];
+      nodes.trackerPipelineSummary.replaceChildren();
+      pipelineStages.forEach(stage => {
+        const line = document.createElement('div');
+        line.style.cssText = 'display:grid;grid-template-columns:115px minmax(0,1fr) 32px;gap:8px;align-items:center;font-size:12px';
+        const label = document.createElement('span'); label.textContent = stage.label;
+        const track = document.createElement('div'); track.style.cssText = 'height:9px;background:#e2e8f0;border-radius:20px;overflow:hidden';
+        const fill = document.createElement('div'); fill.style.cssText = 'height:100%;width:' + (total ? (stage.count / total * 100) : 0) + '%;background:' + stage.color + ';border-radius:20px';
+        track.appendChild(fill);
+        const count = document.createElement('strong'); count.textContent = stage.count; count.style.textAlign = 'right';
+        line.append(label, track, count); nodes.trackerPipelineSummary.appendChild(line);
+      });
 
       const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
       const monthBuckets = [];
