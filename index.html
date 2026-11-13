@@ -2288,6 +2288,37 @@ async function loadAffiliateCenter() {
             });
             actions.appendChild(whatsappAction);
           }
+          if (!isSuperAdminView) {
+            const contactedAction = document.createElement('button');
+            contactedAction.type = 'button';
+            contactedAction.className = 'secondary-btn';
+            contactedAction.textContent = 'Tandai Sudah Dihubungi';
+            contactedAction.addEventListener('click', async () => {
+              const token = sessionStorage.getItem('dcv_access_token');
+              if (!token) { alert('Sesi berakhir. Silakan login kembali.'); return; }
+              if (!confirm('Tandai ' + (item.full_name || 'prospek ini') + ' sudah dihubungi? Jadwal follow-up saat ini akan dikosongkan agar tidak terus muncul sebagai pengingat.')) return;
+              contactedAction.disabled = true;
+              contactedAction.textContent = 'Menyimpan...';
+              try {
+                const updateResponse = await fetch(SUPABASE_URL + '/rest/v1/leads?id=eq.' + encodeURIComponent(item.id), {
+                  method: 'PATCH',
+                  headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+                  body: JSON.stringify({ status: 'dihubungi', follow_up_at: null })
+                });
+                if (!updateResponse.ok) {
+                  const updateError = await updateResponse.json();
+                  throw new Error(updateError.message || updateError.details || 'Gagal memperbarui status prospek.');
+                }
+                await recordLeadActivity(item.id, 'status_changed', 'Prospek ditandai sudah dihubungi dari pengingat Dashboard. Jadwal follow-up sebelumnya dikosongkan.', { from: item.status, to: 'dihubungi', source: 'dashboard_follow_up' });
+                await loadDashboardFollowUps();
+              } catch (error) {
+                alert(error.message || 'Gagal menandai prospek sudah dihubungi.');
+                contactedAction.disabled = false;
+                contactedAction.textContent = 'Tandai Sudah Dihubungi';
+              }
+            });
+            actions.appendChild(contactedAction);
+          }
           const action = document.createElement('button'); action.type = 'button'; action.className = 'secondary-btn'; action.textContent = 'Kelola Prospek';
           action.addEventListener('click', () => navigate('leads'));
           actions.appendChild(action);
