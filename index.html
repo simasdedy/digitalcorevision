@@ -721,27 +721,30 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
     const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
     const setMetric = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value === null || value === undefined ? '—' : Number(value).toLocaleString('id-ID'); };
     try {
-      const [profilesResponse, membershipsResponse, adminsResponse, requestsResponse, leadsResponse, historyResponse, leadsOwnersResponse] = await Promise.all([
+      const loginSince = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const [profilesResponse, membershipsResponse, adminsResponse, requestsResponse, leadsResponse, historyResponse, leadsOwnersResponse, loginActivityResponse] = await Promise.all([
         fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email&order=created_at.desc', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/member_memberships?select=member_id,membership_type,premium_expires_at', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/super_admins?select=user_id', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/premium_upgrade_requests?select=id,status&status=eq.pending', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/leads?select=id', { method: 'HEAD', headers: { ...headers, Prefer: 'count=exact' } }),
         fetch(SUPABASE_URL + '/rest/v1/membership_history?select=member_id,event_type,created_at,new_expires_at&event_type=in.(activation,renewal)&order=created_at.desc&limit=5', { headers }),
-        fetch(SUPABASE_URL + '/rest/v1/leads?select=owner_id', { headers })
+        fetch(SUPABASE_URL + '/rest/v1/leads?select=owner_id', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/member_login_activity?select=user_id&logged_in_at=gte.' + encodeURIComponent(loginSince), { headers })
       ]);
       const readJson = async (response, label) => {
         const data = await response.json();
         if (!response.ok) throw new Error(label + ': ' + (data.message || data.error || response.status));
         return data;
       };
-      const [profiles, memberships, admins, requests, history, leadsOwners] = await Promise.all([
+      const [profiles, memberships, admins, requests, history, leadsOwners, loginActivities] = await Promise.all([
         readJson(profilesResponse, 'Profil member'),
         readJson(membershipsResponse, 'Membership'),
         readJson(adminsResponse, 'Super Admin'),
         readJson(requestsResponse, 'Pengajuan Premium'),
         readJson(historyResponse, 'Riwayat aktivasi'),
-        readJson(leadsOwnersResponse, 'Pemilik Leads')
+        readJson(leadsOwnersResponse, 'Pemilik Leads'),
+        readJson(loginActivityResponse, 'Aktivitas login')
       ]);
       const adminIds = new Set((admins || []).map(row => row.user_id));
       const memberProfiles = (profiles || []).filter(row => !adminIds.has(row.id));
@@ -777,6 +780,25 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
       if (premiumBar) premiumBar.style.width = premiumPercent + '%';
       if (freeBar) freeBar.style.width = freePercent + '%';
       setDistribution('adminDistributionNote', 'Dari ' + totalForDistribution.toLocaleString('id-ID') + ' member; ' + memberLeadCount.toLocaleString('id-ID') + ' member memiliki data Leads.');
+
+      const leadCounts = new Map();
+      (leadsOwners || []).forEach(lead => {
+        if (lead.owner_id) leadCounts.set(lead.owner_id, (leadCounts.get(lead.owner_id) || 0) + 1);
+      });
+      const successfulDuplicators = memberProfiles.filter(profile => (leadCounts.get(profile.id) || 0) >= 5).length;
+      const activeLoginIds = new Set((loginActivities || []).map(row => row.user_id));
+      const loginActiveCount = memberProfiles.filter(profile => activeLoginIds.has(profile.id)).length;
+      const kpiValues = [
+        totalForDistribution ? Math.round(loginActiveCount / totalForDistribution * 100) : 0,
+        totalForDistribution ? Math.round(memberLeadCount / totalForDistribution * 100) : 0,
+        totalForDistribution ? Math.round(successfulDuplicators / totalForDistribution * 100) : 0
+      ];
+      document.querySelectorAll('#admin .admin-kpi .admin-ring').forEach((ring, index) => {
+        const value = kpiValues[index];
+        ring.style.setProperty('--progress', value + '%');
+        const label = ring.querySelector('strong');
+        if (label) label.textContent = value + '%';
+      });
 
       const body = document.getElementById('adminRecentActivationBody');
       if (body) {
@@ -1062,6 +1084,28 @@ if (incomingReferralCode) {
   }
 }
 
+  async function recordMemberLogin(accessToken, userId) {
+    if (!accessToken || !userId) return;
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/member_login_activity', {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+          Authorization: 'Bearer ' + accessToken,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal'
+        },
+        body: JSON.stringify({ user_id: userId })
+      });
+      if (!response.ok) {
+        const detail = await response.text();
+        console.warn('Aktivitas login belum tercatat:', response.status, detail);
+      }
+    } catch (error) {
+      console.warn('Gagal mencatat aktivitas login:', error);
+    }
+  }
+
   memberForm.addEventListener('submit', async function (event) {
     event.preventDefault();
     memberSubmitButton.disabled = true;
@@ -1196,6 +1240,7 @@ enterMemberApp(
         const result = await response.json();
         if (!response.ok) throw new Error(result.msg || result.message || result.error_description || 'Login gagal (' + response.status + ').');
         enterMemberApp(result.access_token, email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
+        recordMemberLogin(result.access_token, result.user && result.user.id);
       }
     } catch (error) {
       showLoginError('Tidak bisa memproses akun: ' + (error.message || 'periksa koneksi Supabase.'));
