@@ -510,7 +510,7 @@ body.admin-authenticated .member-nav [data-page="premium"] { display:none; }
             <div class="admin-panel-card"><div style="border-bottom:1px solid #e5e7eb;padding-bottom:17px;margin-bottom:20px"><div style="font-size:10px;font-weight:900;color:#4f46e5;letter-spacing:2px;text-transform:uppercase">◉ Health Check: Kinerja Sistem</div><h3 style="font-size:25px;margin:7px 0">Indikator <span style="color:#4f46e5">Keberhasilan</span> Jaringan</h3><p style="font-size:11px;color:#6b7280;margin:0">KPI akan dihitung dari aktivitas member dan jaringan yang tercatat di database.</p></div>
               <div class="admin-kpis"><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Aktif Login</b><small>Login 7 hari terakhir · Target 70%</small></div><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Promosi Referral</b><small>Member yang memperoleh leads · Target 50%</small></div><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Duplikasi Sukses</b><small>Member dengan minimal 5 leads · Target 40%</small></div></div>
             </div>
-            <div class="admin-bottom-grid"><div class="admin-panel-card"><h3 style="font-size:16px;margin:0 0 20px">Distribusi Member</h3><div style="display:flex;justify-content:space-between;font-size:12px"><b>Premium</b><strong>—</strong></div><div class="admin-progress"><i style="width:0%"></i></div><div style="display:flex;justify-content:space-between;font-size:12px"><b>Gratis</b><strong>—</strong></div><div class="admin-progress blue"><i style="width:0%"></i></div><div style="border-top:1px solid #e5e7eb;padding-top:15px;margin-top:18px;display:flex;justify-content:space-between;font-size:12px"><b>Member dengan Leads</b><strong>—</strong></div><p style="font-size:10px;color:#6b7280">Ringkasan akan terisi setelah data referral terhubung.</p></div>
+            <div class="admin-bottom-grid"><div class="admin-panel-card"><h3 style="font-size:16px;margin:0 0 20px">Distribusi Member</h3><div style="display:flex;justify-content:space-between;font-size:12px"><b>Premium Aktif</b><strong id="adminDistributionPremium">—</strong></div><div class="admin-progress"><i id="adminDistributionPremiumBar" style="width:0%"></i></div><div style="display:flex;justify-content:space-between;font-size:12px"><b>Gratis</b><strong id="adminDistributionFree">—</strong></div><div class="admin-progress blue"><i id="adminDistributionFreeBar" style="width:0%"></i></div><div style="border-top:1px solid #e5e7eb;padding-top:15px;margin-top:18px;display:flex;justify-content:space-between;font-size:12px"><b>Member dengan Leads</b><strong id="adminDistributionLeads">—</strong></div><p id="adminDistributionNote" style="font-size:10px;color:#6b7280">Menghitung distribusi berdasarkan status membership aktif.</p></div>
               <div class="admin-panel-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px"><h3 style="font-size:16px;margin:0">Aktivasi Premium Terbaru</h3><button class="secondary-btn" onclick="showToast('Daftar aktivasi Premium akan dibuat pada tahap berikutnya.')">Lihat Semua »</button></div><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Member</th><th>Aktivitas</th><th>Status</th><th>Tanggal</th></tr></thead><tbody id="adminRecentActivationBody"><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:25px">Memuat riwayat aktivasi...</td></tr></tbody></table></div></div>
             </div>
             <div class="admin-panel-card" id="admin-members"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div><h3 style="font-size:17px;margin:0 0 5px">Data Member</h3><p style="font-size:11px;color:#6b7280;margin:0">Daftar profil dan status membership dari Supabase.</p></div><button class="secondary-btn" type="button" id="refreshAdminMembers">↻ Muat Ulang</button></div><div class="admin-kpis" id="adminMembershipMetrics" style="margin:12px 0 14px"><div class="admin-kpi"><strong id="adminMetricTotal">—</strong><span>Total Member</span></div><div class="admin-kpi"><strong id="adminMetricFree">—</strong><span>Gratis</span></div><div class="admin-kpi"><strong id="adminMetricPremium">—</strong><span>Premium Aktif</span></div><div class="admin-kpi"><strong id="adminMetricExpired">—</strong><span>Premium Kedaluwarsa</span></div></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"><input id="adminMemberSearch" class="field" style="flex:1;min-width:220px;padding:10px 12px;margin:0;border:1px solid #d1d5db;border-radius:8px" placeholder="Cari nama atau email member..."><select id="adminMembershipFilter" class="field" style="width:min(230px,100%);padding:10px 12px;margin:0;border:1px solid #d1d5db;border-radius:8px"><option value="all">Semua status</option><option value="free">Gratis</option><option value="premium-active">Premium Aktif</option><option value="premium-expired">Premium Kedaluwarsa</option></select></div><div id="adminMembersMessage" style="font-size:12px;color:#64748b;padding:12px 0">Data member belum dimuat.</div><div style="overflow-x:auto"><table class="admin-table" id="adminMembersTable"><thead><tr><th>Nama</th><th>Email</th><th>Membership</th><th>Masa Premium</th><th>Tanggal Daftar</th></tr></thead><tbody></tbody></table></div></div>
@@ -721,25 +721,27 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
     const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
     const setMetric = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value === null || value === undefined ? '—' : Number(value).toLocaleString('id-ID'); };
     try {
-      const [profilesResponse, membershipsResponse, adminsResponse, requestsResponse, leadsResponse, historyResponse] = await Promise.all([
+      const [profilesResponse, membershipsResponse, adminsResponse, requestsResponse, leadsResponse, historyResponse, leadsOwnersResponse] = await Promise.all([
         fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email&order=created_at.desc', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/member_memberships?select=member_id,membership_type,premium_expires_at', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/super_admins?select=user_id', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/premium_upgrade_requests?select=id,status&status=eq.pending', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/leads?select=id', { method: 'HEAD', headers: { ...headers, Prefer: 'count=exact' } }),
-        fetch(SUPABASE_URL + '/rest/v1/membership_history?select=member_id,event_type,created_at,new_expires_at&event_type=in.(activation,renewal)&order=created_at.desc&limit=5', { headers })
+        fetch(SUPABASE_URL + '/rest/v1/membership_history?select=member_id,event_type,created_at,new_expires_at&event_type=in.(activation,renewal)&order=created_at.desc&limit=5', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/leads?select=owner_id', { headers })
       ]);
       const readJson = async (response, label) => {
         const data = await response.json();
         if (!response.ok) throw new Error(label + ': ' + (data.message || data.error || response.status));
         return data;
       };
-      const [profiles, memberships, admins, requests, history] = await Promise.all([
+      const [profiles, memberships, admins, requests, history, leadsOwners] = await Promise.all([
         readJson(profilesResponse, 'Profil member'),
         readJson(membershipsResponse, 'Membership'),
         readJson(adminsResponse, 'Super Admin'),
         readJson(requestsResponse, 'Pengajuan Premium'),
-        readJson(historyResponse, 'Riwayat aktivasi')
+        readJson(historyResponse, 'Riwayat aktivasi'),
+        readJson(leadsOwnersResponse, 'Pemilik Leads')
       ]);
       const adminIds = new Set((admins || []).map(row => row.user_id));
       const memberProfiles = (profiles || []).filter(row => !adminIds.has(row.id));
@@ -756,6 +758,25 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
       const contentRange = leadsResponse.headers.get('content-range') || '';
       const leadCount = contentRange.includes('/') ? Number(contentRange.split('/').pop()) : null;
       setMetric('adminDashTotalLeads', Number.isFinite(leadCount) ? leadCount : null);
+
+      const freeCount = memberProfiles.filter(profile => {
+        const membership = membershipMap.get(profile.id);
+        return !membership || membership.membership_type !== 'premium';
+      }).length;
+      const totalForDistribution = memberProfiles.length;
+      const premiumPercent = totalForDistribution ? Math.round((premiumActive / totalForDistribution) * 100) : 0;
+      const freePercent = totalForDistribution ? Math.round((freeCount / totalForDistribution) * 100) : 0;
+      const leadOwnerIds = new Set((leadsOwners || []).map(lead => lead.owner_id).filter(Boolean));
+      const memberLeadCount = memberProfiles.filter(profile => leadOwnerIds.has(profile.id)).length;
+      const setDistribution = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+      setDistribution('adminDistributionPremium', premiumActive.toLocaleString('id-ID') + ' (' + premiumPercent + '%)');
+      setDistribution('adminDistributionFree', freeCount.toLocaleString('id-ID') + ' (' + freePercent + '%)');
+      setDistribution('adminDistributionLeads', memberLeadCount.toLocaleString('id-ID'));
+      const premiumBar = document.getElementById('adminDistributionPremiumBar');
+      const freeBar = document.getElementById('adminDistributionFreeBar');
+      if (premiumBar) premiumBar.style.width = premiumPercent + '%';
+      if (freeBar) freeBar.style.width = freePercent + '%';
+      setDistribution('adminDistributionNote', 'Dari ' + totalForDistribution.toLocaleString('id-ID') + ' member; ' + memberLeadCount.toLocaleString('id-ID') + ' member memiliki data Leads.');
 
       const body = document.getElementById('adminRecentActivationBody');
       if (body) {
