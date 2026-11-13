@@ -506,12 +506,12 @@ body.admin-authenticated .member-nav [data-page="premium"] { display:none; }
           <div class="admin-main">
             <h2>Dashboard</h2>
             <div class="admin-license"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><strong style="font-size:17px;color:#15803d">✓ Status Lisensi: Active</strong><p style="font-size:12px;color:#6b7280;margin:6px 0">Status lisensi dan masa aktif platform akan ditampilkan di sini.</p></div><button class="primary-btn" onclick="showToast('Fitur backup akan dihubungkan pada tahap backend.')">↓ &nbsp; Download Backup DB</button></div><p style="font-size:10px;color:#6b7280;border-top:1px solid #e5e7eb;padding-top:10px;margin:10px 0 0">Lakukan pencadangan database secara rutin untuk menjaga keamanan data platform.</p></div>
-            <div class="admin-metrics"><div class="admin-metric"><strong>—</strong><span>Total Member</span></div><div class="admin-metric"><strong>—</strong><span>Total Konten/Training</span></div><div class="admin-metric"><strong>—</strong><span>Request Pending</span></div><div class="admin-metric"><strong>—</strong><span>Konversi Leads</span></div></div>
+            <div class="admin-metrics"><div class="admin-metric"><strong id="adminDashTotalMembers">—</strong><span>Total Member</span></div><div class="admin-metric"><strong id="adminDashPremiumActive">—</strong><span>Premium Aktif</span></div><div class="admin-metric"><strong id="adminDashPendingRequests">—</strong><span>Request Pending</span></div><div class="admin-metric"><strong id="adminDashTotalLeads">—</strong><span>Total Leads</span></div></div>
             <div class="admin-panel-card"><div style="border-bottom:1px solid #e5e7eb;padding-bottom:17px;margin-bottom:20px"><div style="font-size:10px;font-weight:900;color:#4f46e5;letter-spacing:2px;text-transform:uppercase">◉ Health Check: Kinerja Sistem</div><h3 style="font-size:25px;margin:7px 0">Indikator <span style="color:#4f46e5">Keberhasilan</span> Jaringan</h3><p style="font-size:11px;color:#6b7280;margin:0">KPI akan dihitung dari aktivitas member dan jaringan yang tercatat di database.</p></div>
               <div class="admin-kpis"><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Aktif Login</b><small>Login 7 hari terakhir · Target 70%</small></div><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Promosi Referral</b><small>Member yang memperoleh leads · Target 50%</small></div><div class="admin-kpi"><div class="admin-ring" style="--progress:0%"><strong>—</strong></div><b>Duplikasi Sukses</b><small>Member dengan minimal 5 leads · Target 40%</small></div></div>
             </div>
             <div class="admin-bottom-grid"><div class="admin-panel-card"><h3 style="font-size:16px;margin:0 0 20px">Distribusi Member</h3><div style="display:flex;justify-content:space-between;font-size:12px"><b>Premium</b><strong>—</strong></div><div class="admin-progress"><i style="width:0%"></i></div><div style="display:flex;justify-content:space-between;font-size:12px"><b>Gratis</b><strong>—</strong></div><div class="admin-progress blue"><i style="width:0%"></i></div><div style="border-top:1px solid #e5e7eb;padding-top:15px;margin-top:18px;display:flex;justify-content:space-between;font-size:12px"><b>Member dengan Leads</b><strong>—</strong></div><p style="font-size:10px;color:#6b7280">Ringkasan akan terisi setelah data referral terhubung.</p></div>
-              <div class="admin-panel-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px"><h3 style="font-size:16px;margin:0">Aktivasi Premium Terbaru</h3><button class="secondary-btn" onclick="showToast('Daftar aktivasi Premium akan dibuat pada tahap berikutnya.')">Lihat Semua »</button></div><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Member</th><th>Sponsor</th><th>Status</th><th>Tanggal</th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:25px">Belum ada riwayat aktivasi Premium.</td></tr></tbody></table></div></div>
+              <div class="admin-panel-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px"><h3 style="font-size:16px;margin:0">Aktivasi Premium Terbaru</h3><button class="secondary-btn" onclick="showToast('Daftar aktivasi Premium akan dibuat pada tahap berikutnya.')">Lihat Semua »</button></div><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Member</th><th>Aktivitas</th><th>Status</th><th>Tanggal</th></tr></thead><tbody id="adminRecentActivationBody"><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:25px">Memuat riwayat aktivasi...</td></tr></tbody></table></div></div>
             </div>
             <div class="admin-panel-card" id="admin-members"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div><h3 style="font-size:17px;margin:0 0 5px">Data Member</h3><p style="font-size:11px;color:#6b7280;margin:0">Daftar profil dan status membership dari Supabase.</p></div><button class="secondary-btn" type="button" id="refreshAdminMembers">↻ Muat Ulang</button></div><div class="admin-kpis" id="adminMembershipMetrics" style="margin:12px 0 14px"><div class="admin-kpi"><strong id="adminMetricTotal">—</strong><span>Total Member</span></div><div class="admin-kpi"><strong id="adminMetricFree">—</strong><span>Gratis</span></div><div class="admin-kpi"><strong id="adminMetricPremium">—</strong><span>Premium Aktif</span></div><div class="admin-kpi"><strong id="adminMetricExpired">—</strong><span>Premium Kedaluwarsa</span></div></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"><input id="adminMemberSearch" class="field" style="flex:1;min-width:220px;padding:10px 12px;margin:0;border:1px solid #d1d5db;border-radius:8px" placeholder="Cari nama atau email member..."><select id="adminMembershipFilter" class="field" style="width:min(230px,100%);padding:10px 12px;margin:0;border:1px solid #d1d5db;border-radius:8px"><option value="all">Semua status</option><option value="free">Gratis</option><option value="premium-active">Premium Aktif</option><option value="premium-expired">Premium Kedaluwarsa</option></select></div><div id="adminMembersMessage" style="font-size:12px;color:#64748b;padding:12px 0">Data member belum dimuat.</div><div style="overflow-x:auto"><table class="admin-table" id="adminMembersTable"><thead><tr><th>Nama</th><th>Email</th><th>Membership</th><th>Masa Premium</th><th>Tanggal Daftar</th></tr></thead><tbody></tbody></table></div></div>
             <div class="admin-panel-card" id="premiumUpgradeRequestsAdmin"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h3 style="font-size:18px;margin:0 0 6px">Pengajuan Upgrade Premium</h3><p id="premiumUpgradeRequestsMessage" style="font-size:11px;color:#6b7280;margin:0">Memuat pengajuan member...</p></div><button class="secondary-btn" type="button" id="refreshPremiumUpgradeRequests">↻ Muat Ulang Pengajuan</button></div><div style="overflow-x:auto;margin-top:12px"><table class="admin-table" id="premiumUpgradeRequestsTable"><thead><tr><th>Member</th><th>Tanggal</th><th>Pesan</th><th>Status</th><th>Aksi</th></tr></thead><tbody></tbody></table></div><p style="font-size:10px;color:#9ca3af;margin:12px 0 0">Pengajuan bukan bukti pembayaran. Setelah pembayaran diverifikasi, aktifkan Premium melalui formulir Aktivasi Premium di bawah ini.</p></div>
@@ -559,6 +559,7 @@ function navigate(page) {
   }
   document.querySelectorAll('.page').forEach(el => el.classList.toggle('active', el.id === page));
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+  if (page === 'admin' && typeof window.loadAdminDashboard === 'function') window.loadAdminDashboard();
   if (page === 'admin' && typeof window.loadAdminMembers === 'function') window.loadAdminMembers();
   if (page === 'admin' && typeof window.loadTrainingCertificatesAdmin === 'function') window.loadTrainingCertificatesAdmin();
   if (page === 'admin' && typeof window.loadPremiumUpgradeRequestsAdmin === 'function') window.loadPremiumUpgradeRequestsAdmin();
@@ -710,6 +711,89 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
       renderMembers(rows);
     } catch (error) {
       message.textContent = 'Gagal memuat data: ' + (error.message || 'Periksa koneksi dan kebijakan RLS Supabase.');
+    }
+  }
+
+
+  async function loadAdminDashboard() {
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token) return;
+    const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
+    const setMetric = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value === null || value === undefined ? '—' : Number(value).toLocaleString('id-ID'); };
+    try {
+      const [profilesResponse, membershipsResponse, adminsResponse, requestsResponse, leadsResponse, historyResponse] = await Promise.all([
+        fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email&order=created_at.desc', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/member_memberships?select=member_id,membership_type,premium_expires_at', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/super_admins?select=user_id', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/premium_upgrade_requests?select=id,status&status=eq.pending', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/leads?select=id', { method: 'HEAD', headers: { ...headers, Prefer: 'count=exact' } }),
+        fetch(SUPABASE_URL + '/rest/v1/membership_history?select=member_id,event_type,verified_at,created_at,new_expires_at&event_type=in.(activation,renewal)&order=verified_at.desc&limit=5', { headers })
+      ]);
+      const readJson = async (response, label) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(label + ': ' + (data.message || data.error || response.status));
+        return data;
+      };
+      const [profiles, memberships, admins, requests, history] = await Promise.all([
+        readJson(profilesResponse, 'Profil member'),
+        readJson(membershipsResponse, 'Membership'),
+        readJson(adminsResponse, 'Super Admin'),
+        readJson(requestsResponse, 'Pengajuan Premium'),
+        readJson(historyResponse, 'Riwayat aktivasi')
+      ]);
+      const adminIds = new Set((admins || []).map(row => row.user_id));
+      const memberProfiles = (profiles || []).filter(row => !adminIds.has(row.id));
+      const membershipMap = new Map((memberships || []).map(row => [row.member_id, row]));
+      const now = Date.now();
+      const premiumActive = memberProfiles.filter(profile => {
+        const membership = membershipMap.get(profile.id);
+        const expiry = membership && membership.premium_expires_at ? new Date(membership.premium_expires_at).getTime() : 0;
+        return membership && membership.membership_type === 'premium' && expiry > now;
+      }).length;
+      setMetric('adminDashTotalMembers', memberProfiles.length);
+      setMetric('adminDashPremiumActive', premiumActive);
+      setMetric('adminDashPendingRequests', (requests || []).length);
+      const contentRange = leadsResponse.headers.get('content-range') || '';
+      const leadCount = contentRange.includes('/') ? Number(contentRange.split('/').pop()) : null;
+      setMetric('adminDashTotalLeads', Number.isFinite(leadCount) ? leadCount : null);
+
+      const body = document.getElementById('adminRecentActivationBody');
+      if (body) {
+        body.replaceChildren();
+        if (!history || !history.length) {
+          const row = document.createElement('tr');
+          const cell = document.createElement('td');
+          cell.colSpan = 4; cell.textContent = 'Belum ada riwayat aktivasi atau perpanjangan Premium.';
+          cell.style.cssText = 'text-align:center;color:#9ca3af;padding:25px';
+          row.appendChild(cell); body.appendChild(row);
+        } else {
+          const profileMap = new Map(memberProfiles.map(profile => [profile.id, profile]));
+          history.forEach(item => {
+            const profile = profileMap.get(item.member_id) || {};
+            const row = document.createElement('tr');
+            const values = [
+              (profile.full_name || 'Member') + ' · ' + (profile.email || item.member_id.slice(0,8)),
+              item.event_type === 'renewal' ? 'Perpanjangan Premium' : 'Aktivasi Premium',
+              'Berhasil',
+              item.verified_at || item.created_at ? new Date(item.verified_at || item.created_at).toLocaleDateString('id-ID') : '—'
+            ];
+            values.forEach(value => { const cell = document.createElement('td'); cell.textContent = value; row.appendChild(cell); });
+            body.appendChild(row);
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Admin dashboard gagal dimuat:', error);
+      ['adminDashTotalMembers','adminDashPremiumActive','adminDashPendingRequests','adminDashTotalLeads'].forEach(id => setMetric(id, null));
+      const body = document.getElementById('adminRecentActivationBody');
+      if (body) {
+        body.replaceChildren();
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 4; cell.textContent = 'Statistik belum dapat dimuat: ' + (error.message || 'Periksa koneksi dan RLS Supabase.');
+        cell.style.cssText = 'white-space:normal;color:#b91c1c;padding:16px';
+        row.appendChild(cell); body.appendChild(row);
+      }
     }
   }
 
