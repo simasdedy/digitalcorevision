@@ -564,7 +564,7 @@ function navigate(page) {
   if (page === 'admin' && typeof window.loadPremiumUpgradeRequestsAdmin === 'function') window.loadPremiumUpgradeRequestsAdmin();
   if (page === 'premium' && typeof window.loadMyPremiumUpgradeRequest === 'function') window.loadMyPremiumUpgradeRequest();
   if (page === 'leads' && typeof window.loadLeads === 'function') { window.loadLeads(); if (typeof window.loadLeadReport === 'function') window.loadLeadReport(); }
-  if (page === 'dashboard' && typeof window.loadDashboardFollowUps === 'function') window.loadDashboardFollowUps();
+  if (page === 'dashboard' && typeof window.loadDashboardFollowUps === 'function' && (!document.body.classList.contains('member-authenticated') || window.dcvMembershipStatus === 'premium')) window.loadDashboardFollowUps();
   if (page === 'content' && typeof window.loadContentModule === 'function') window.loadContentModule();
   if (page === 'training' && typeof window.loadMemberTraining === 'function') window.loadMemberTraining();
   window.scrollTo({top:0, behavior:'smooth'});
