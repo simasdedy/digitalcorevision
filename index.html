@@ -209,6 +209,89 @@ body.admin-authenticated .member-nav [data-page="premium"] { display:none; }
 [hidden] {
     display: none !important;
 }
+
+/* RESPONSIVE MOBILE - DIGITALCOREVISION 2.0 */
+html { width:100%; overflow-x:hidden; }
+body { width:100%; min-width:320px; overflow-x:hidden; }
+img, video, iframe { max-width:100%; }
+button, .primary-btn, .secondary-btn { touch-action:manipulation; }
+@media (max-width:768px) {
+  .topbar {
+    position:sticky; top:0; z-index:20; height:auto; min-height:0;
+    display:flex; flex-wrap:wrap; gap:8px; padding:10px 12px 0;
+  }
+  .brand { font-size:13px; gap:6px; }
+  .brand-mark { width:27px; height:27px; font-size:17px; }
+  .top-actions { gap:7px; margin-left:auto; }
+  #signedInEmail { display:none; }
+  .top-actions .secondary-btn { padding:8px 10px; font-size:11px; }
+  .member-nav {
+    order:3; flex:0 0 calc(100% + 24px); width:calc(100% + 24px);
+    margin:0 -12px; padding:0 8px; min-height:46px;
+    overflow-x:auto; overflow-y:hidden; overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch; scrollbar-width:thin;
+  }
+  .member-nav .nav-btn {
+    flex:0 0 auto; min-height:44px; padding:0 11px;
+    white-space:nowrap; font-size:12px;
+  }
+  .layout { display:block; min-height:calc(100vh - 105px); }
+  main { width:100%; max-width:100%; padding:20px 12px 32px; }
+  .page-head { align-items:flex-start; flex-wrap:wrap; gap:10px; margin-bottom:17px; }
+  .page-head > button { flex:0 0 auto; }
+  h1 { font-size:22px; line-height:1.25; }
+  .subtitle { font-size:12px; line-height:1.5; }
+  .cards { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .card { min-width:0; padding:13px; border-radius:13px; }
+  .metric-value { font-size:22px; }
+  .content-grid, .admin-growth-grid { grid-template-columns:minmax(0,1fr); }
+  .form-row, .premium-feature-grid { grid-template-columns:minmax(0,1fr); }
+  .member-shortcuts { grid-template-columns:minmax(0,1fr); }
+  .feature-banner { flex-direction:column; align-items:flex-start; padding:18px 15px; }
+  .feature-banner h2 { font-size:20px; }
+  .feature-image { min-height:180px; padding:14px; }
+  .feature-image img, .feature-image video, .feature-image iframe { min-height:180px; }
+  .table-card { min-width:0; }
+  .table-wrap { width:100%; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  table { min-width:650px; }
+  .admin-shell { display:block; min-width:0; margin:0 -12px -32px; }
+  .admin-sidebar {
+    display:flex; flex-direction:row; flex-wrap:nowrap; gap:4px;
+    position:sticky; top:0; z-index:12; width:100%; height:auto;
+    padding:8px; overflow-x:auto; overflow-y:hidden;
+    white-space:nowrap; overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .admin-sidebar h2, .admin-sidebar .group-label { display:none; }
+  .admin-sidebar a { flex:0 0 auto; margin:0; padding:10px 12px; font-size:11px; }
+  .admin-main { min-width:0; padding:18px 12px; overflow-x:hidden; }
+  .admin-main h2 { font-size:22px; }
+  .admin-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .admin-metric { min-width:0; padding:13px; }
+  .admin-metric strong { font-size:23px; }
+  .admin-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .admin-panel-card { min-width:0; padding:15px; overflow-x:auto; }
+  .modal-backdrop { padding:10px; align-items:flex-end; }
+  .modal { width:100%; max-height:90vh; overflow-y:auto; padding:17px; border-radius:16px 16px 10px 10px; }
+  .modal-actions { flex-wrap:wrap; }
+  .toast { left:12px; right:12px; bottom:12px; text-align:center; }
+  input, select, textarea { max-width:100%; font-size:16px; }
+  .secondary-btn, .primary-btn { min-height:40px; }
+}
+@media (max-width:420px) {
+  .brand { font-size:11px; letter-spacing:-.3px; }
+  .brand-mark { width:23px; }
+  .top-actions .secondary-btn { padding:7px 8px; }
+  main { padding-left:10px; padding-right:10px; }
+  .cards { gap:7px; }
+  .card { padding:11px; }
+  .metric-label { font-size:10px; }
+  .metric-value { font-size:20px; }
+  .admin-metrics, .admin-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .admin-main { padding-left:10px; padding-right:10px; }
+  .page-head > button { font-size:11px; padding:9px 10px; }
+}
+
 </style>
 </head>
 <body>
