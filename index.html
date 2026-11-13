@@ -408,6 +408,17 @@ button, .primary-btn, .secondary-btn { touch-action:manipulation; }
             <div class="card"><div class="metric-label">Prospek Diproses</div><div class="metric-value" id="trackerProcessed">—</div><div class="section-sub">Sudah dihubungi, follow-up, tertarik, atau closing</div></div>
             <div class="card"><div class="metric-label">Rasio Prospek Diproses</div><div class="metric-value" id="trackerProcessedRate">—</div><div class="section-sub">Dari total seluruh prospek</div></div>
           </div>
+          <div class="card" id="monthlyPerformanceCard" style="margin-top:14px">
+            <div class="section-title">Laporan Performa Bulanan</div>
+            <div class="section-sub" id="monthlyPerformancePeriod" style="margin:4px 0 12px">Ringkasan bulan berjalan berdasarkan data prospek dan aktivitas.</div>
+            <div class="cards" style="margin:0">
+              <div class="card"><div class="metric-label">Prospek Baru Bulan Ini</div><div class="metric-value" id="monthlyNewLeads">—</div></div>
+              <div class="card"><div class="metric-label">Aktivitas Bulan Ini</div><div class="metric-value" id="monthlyActivities">—</div></div>
+              <div class="card"><div class="metric-label">WhatsApp Dibuka Bulan Ini</div><div class="metric-value" id="monthlyWhatsApp">—</div></div>
+              <div class="card"><div class="metric-label">Closing Saat Ini</div><div class="metric-value" id="monthlyClosing">—</div></div>
+            </div>
+            <div class="section-sub" id="monthlyPerformanceNote" style="margin-top:10px">Perbandingan dengan bulan sebelumnya akan tampil setelah data tersedia.</div>
+          </div>
           <div class="card" style="margin-top:14px">
             <div class="section-title">Ringkasan Pipeline Prospek</div>
             <div class="section-sub" style="margin:4px 0 12px">Distribusi status prospek saat ini.</div>
@@ -2264,7 +2275,7 @@ async function loadAffiliateCenter() {
   }
 
   async function loadDashboardFollowUps() {
-    const ids = ['dashFollowOverdue','dashFollowToday','dashFollowTomorrow','dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList','trackerTotal','trackerNew','trackerInterested','trackerClosing','trackerConversion','trackerContacted','trackerFollowUp','trackerNotInterested','trackerActivities30','trackerWhatsApp30','trackerProcessed','trackerProcessedRate','trackerPipelineSummary','trackerMonthlyChart','trackerMonthlyNote'];
+    const ids = ['dashFollowOverdue','dashFollowToday','dashFollowTomorrow','dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList','trackerTotal','trackerNew','trackerInterested','trackerClosing','trackerConversion','trackerContacted','trackerFollowUp','trackerNotInterested','trackerActivities30','trackerWhatsApp30','trackerProcessed','trackerProcessedRate','trackerPipelineSummary','trackerMonthlyChart','trackerMonthlyNote','monthlyPerformancePeriod','monthlyNewLeads','monthlyActivities','monthlyWhatsApp','monthlyClosing','monthlyPerformanceNote'];
     const nodes = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
     const token = sessionStorage.getItem('dcv_access_token');
     if (!token) {
@@ -2275,14 +2286,18 @@ async function loadAffiliateCenter() {
       const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
       const activitySince = new Date();
       activitySince.setDate(activitySince.getDate() - 30);
-      // Ambil data prospek dan aktivitas secara bersamaan agar dashboard lebih responsif.
-      const [response, activityResponse] = await Promise.all([
+      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+      const previousMonthStart = new Date(monthStart); previousMonthStart.setMonth(previousMonthStart.getMonth() - 1);
+      // Data aktivitas 30 hari dan bulan berjalan dipisahkan agar kedua laporan memakai rentang waktu yang tepat.
+      const [response, activityResponse, monthlyActivityResponse] = await Promise.all([
         fetch(SUPABASE_URL + '/rest/v1/leads?select=id,owner_id,full_name,phone,status,follow_up_at,created_at&order=created_at.desc', { headers }),
-        fetch(SUPABASE_URL + '/rest/v1/lead_activities?select=id,activity_type,created_at&created_at=gte.' + encodeURIComponent(activitySince.toISOString()) + '&order=created_at.desc', { headers })
+        fetch(SUPABASE_URL + '/rest/v1/lead_activities?select=id,activity_type,created_at&created_at=gte.' + encodeURIComponent(activitySince.toISOString()) + '&order=created_at.desc', { headers }),
+        fetch(SUPABASE_URL + '/rest/v1/lead_activities?select=id,activity_type,created_at&created_at=gte.' + encodeURIComponent(monthStart.toISOString()) + '&order=created_at.desc', { headers })
       ]);
-      const [leads, recentActivities] = await Promise.all([response.json(), activityResponse.json()]);
+      const [leads, recentActivities, monthlyActivities] = await Promise.all([response.json(), activityResponse.json(), monthlyActivityResponse.json()]);
       if (!response.ok) throw new Error(leads.message || 'Gagal memuat pengingat follow-up.');
       if (!activityResponse.ok) throw new Error(recentActivities.message || 'Gagal memuat aktivitas prospek.');
+      if (!monthlyActivityResponse.ok) throw new Error(monthlyActivities.message || 'Gagal memuat laporan aktivitas bulanan.');
       const isSuperAdminView = document.body.classList.contains('admin-authenticated');
       const ownerNames = {};
       if (isSuperAdminView) {
@@ -2308,6 +2323,17 @@ async function loadAffiliateCenter() {
       nodes.trackerNotInterested.textContent = notInterestedCount;
       nodes.trackerActivities30.textContent = recentActivities.length;
       nodes.trackerWhatsApp30.textContent = recentActivities.filter(activity => activity.activity_type === 'whatsapp_opened').length;
+      const currentMonthLeads = leads.filter(item => item.created_at && new Date(item.created_at) >= monthStart);
+      const previousMonthLeads = leads.filter(item => item.created_at && new Date(item.created_at) >= previousMonthStart && new Date(item.created_at) < monthStart);
+      const monthLabel = monthStart.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+      nodes.monthlyPerformancePeriod.textContent = 'Periode ' + monthLabel + ' · diperbarui saat dashboard dimuat.';
+      nodes.monthlyNewLeads.textContent = currentMonthLeads.length;
+      nodes.monthlyActivities.textContent = monthlyActivities.length;
+      nodes.monthlyWhatsApp.textContent = monthlyActivities.filter(activity => activity.activity_type === 'whatsapp_opened').length;
+      nodes.monthlyClosing.textContent = closingCount;
+      const leadChange = currentMonthLeads.length - previousMonthLeads.length;
+      const leadChangeText = leadChange > 0 ? 'naik ' + leadChange : leadChange < 0 ? 'turun ' + Math.abs(leadChange) : 'sama';
+      nodes.monthlyPerformanceNote.textContent = 'Prospek baru bulan ini ' + leadChangeText + ' dibanding bulan sebelumnya (' + previousMonthLeads.length + ' prospek bulan lalu). Closing menunjukkan jumlah prospek berstatus Closing saat ini, bukan jumlah closing yang terjadi pada bulan ini.';
       const processedCount = contactedCount + followUpCount + interestedCount + closingCount;
       nodes.trackerProcessed.textContent = processedCount;
       nodes.trackerProcessedRate.textContent = total ? ((processedCount / total) * 100).toFixed(1).replace('.', ',') + '%' : '0%';
