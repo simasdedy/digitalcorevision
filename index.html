@@ -727,7 +727,7 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
         fetch(SUPABASE_URL + '/rest/v1/super_admins?select=user_id', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/premium_upgrade_requests?select=id,status&status=eq.pending', { headers }),
         fetch(SUPABASE_URL + '/rest/v1/leads?select=id', { method: 'HEAD', headers: { ...headers, Prefer: 'count=exact' } }),
-        fetch(SUPABASE_URL + '/rest/v1/membership_history?select=member_id,event_type,verified_at,created_at,new_expires_at&event_type=in.(activation,renewal)&order=verified_at.desc&limit=5', { headers })
+        fetch(SUPABASE_URL + '/rest/v1/membership_history?select=member_id,event_type,created_at,new_expires_at&event_type=in.(activation,renewal)&order=created_at.desc&limit=5', { headers })
       ]);
       const readJson = async (response, label) => {
         const data = await response.json();
@@ -775,7 +775,7 @@ document.getElementById('modal').addEventListener('click', e => { if (e.target.i
               (profile.full_name || 'Member') + ' · ' + (profile.email || item.member_id.slice(0,8)),
               item.event_type === 'renewal' ? 'Perpanjangan Premium' : 'Aktivasi Premium',
               'Berhasil',
-              item.verified_at || item.created_at ? new Date(item.verified_at || item.created_at).toLocaleDateString('id-ID') : '—'
+              item.created_at ? new Date(item.created_at).toLocaleDateString('id-ID') : '—'
             ];
             values.forEach(value => { const cell = document.createElement('td'); cell.textContent = value; row.appendChild(cell); });
             body.appendChild(row);
