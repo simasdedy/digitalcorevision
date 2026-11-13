@@ -138,6 +138,22 @@ main { max-width:1200px; padding:42px 16px 50px; }
 .shortcut { background:light-dark(#fff,#172940); border:1px solid light-dark(#e4ebf3,#283b55); border-radius:12px; padding:18px; }
 .shortcut strong { display:block; margin-bottom:6px; }
 .shortcut span { color:light-dark(#718198,#a5b6cb); font-size:12px; }
+.premium-promo { margin:18px 0; padding:22px; border-radius:16px; color:#fff; background:linear-gradient(120deg,#10243d,#174a70 68%,#087e78); box-shadow:0 12px 28px #123b6620; }
+.premium-promo h2 { margin:8px 0; font-size:22px; }
+.premium-promo p { color:#d8e7f4; font-size:12px; line-height:1.65; max-width:760px; }
+.premium-chip-row { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 18px; }
+.premium-chip { display:inline-flex; gap:6px; align-items:center; padding:7px 10px; border:1px solid #ffffff35; border-radius:999px; color:#f4fbff; font-size:11px; }
+.premium-cta { border:0; border-radius:9px; padding:12px 16px; color:#10243d; background:#f4c96b; font-weight:850; font-size:12px; }
+.premium-nav-lock { display:none; margin-left:5px; font-size:10px; }
+.premium-feature-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.premium-feature { padding:16px; border:1px solid light-dark(#e1e8f0,#30445e); border-radius:13px; background:light-dark(#fff,#172940); }
+.premium-feature .lock { color:#c18a23; font-size:18px; }
+.premium-feature strong { display:block; margin:7px 0 4px; font-size:13px; }
+.premium-feature p { margin:0; color:light-dark(#718198,#a5b6cb); font-size:11px; line-height:1.55; }
+.premium-status-box { margin-top:14px; padding:13px 15px; border-radius:11px; background:light-dark(#eff6fb,#1b3048); font-size:12px; line-height:1.6; }
+.premium-request-form { margin-top:16px; padding-top:16px; border-top:1px solid light-dark(#e5ebf2,#30445e); }
+body.admin-authenticated .member-nav [data-page="premium"] { display:none; }
+@media(max-width:600px) { .premium-feature-grid { grid-template-columns:1fr; } .premium-promo { padding:17px; } .premium-promo h2 { font-size:19px; } }
 .admin-shell { display:grid; grid-template-columns:245px minmax(0,1fr); min-height:calc(100vh - 150px); margin:0 -16px -50px; background:#f3f4f6; color:#111827; }
 .admin-sidebar { background:#111827; color:#fff; padding:22px 13px; position:sticky; top:76px; height:calc(100vh - 76px); align-self:start; overflow-y:auto; overscroll-behavior:contain; }
 .admin-sidebar h2 { font-size:21px; margin:0 0 22px; }
@@ -219,7 +235,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
 <div class="app-root">
   <header class="topbar">
     <div class="brand"><div class="brand-mark">DC</div><span>DIGITALCOREVISION <span style="color:var(--site-secondary)">2.0</span></span></div>
-    <nav class="member-nav"><button class="nav-btn active" data-page="dashboard">Dashboard</button><button class="nav-btn" data-page="content">Konten</button><button class="nav-btn" data-page="training">Training</button><button class="nav-btn" data-page="profile">Profile</button><button class="nav-btn" data-page="leads">Data Leads</button><button class="nav-btn" data-page="affiliate">Affiliate Center</button><button class="nav-btn" data-page="admin">Admin Panel</button></nav>
+    <nav class="member-nav"><button class="nav-btn active" data-page="dashboard">Dashboard</button><button class="nav-btn" data-page="content">Konten</button><button class="nav-btn" data-page="training">Training</button><button class="nav-btn" data-page="premium">Premium Center</button><button class="nav-btn" data-page="profile">Profile</button><button class="nav-btn" data-page="leads" data-premium-feature="true">Data Leads <span class="premium-nav-lock">🔒</span></button><button class="nav-btn" data-page="affiliate" data-premium-feature="true">Affiliate Center <span class="premium-nav-lock">🔒</span></button><button class="nav-btn" data-page="admin">Admin Panel</button></nav>
     <div class="top-actions"><span id="signedInEmail" style="font-size:12px;color:light-dark(#64758b,#b6c6d9)"></span><button class="secondary-btn" id="adminLogoutButton" type="button">Logout</button></div>
   </header>
   <div class="layout">
@@ -240,6 +256,12 @@ main { max-width:1200px; padding:42px 16px 50px; }
             <div><div class="metric-label">STATUS MEMBERSHIP</div><strong id="memberMembershipStatusTitle" style="display:block;font-size:18px;margin-top:5px">Memeriksa membership...</strong><div id="memberMembershipStatusDetail" class="section-sub" style="margin-top:6px">Status akun sedang diperiksa dari database.</div></div>
             <span id="memberMembershipStatusBadge" class="status">Memeriksa...</span>
           </div>
+        </div>
+        <div class="premium-promo" id="freeMemberUpgradeBanner" hidden>
+          <span class="premium-chip">✦ FREE MEMBER EXPERIENCE</span><h2>Kembangkan Bisnis Anda Lebih Maksimal</h2>
+          <p>Nikmati Dashboard, Profil, dan Training dasar secara gratis. Saat siap, buka akses Premium untuk menggunakan tools pengembangan bisnis, referral, dan pengelolaan prospek.</p>
+          <div class="premium-chip-row"><span class="premium-chip">✓ Dashboard & Profil</span><span class="premium-chip">✓ Training dasar</span><span class="premium-chip">🔒 Affiliate Center</span><span class="premium-chip">🔒 Data Leads & Follow-up</span></div>
+          <button class="premium-cta" type="button" onclick="navigate('premium')">LIHAT KEUNTUNGAN PREMIUM →</button>
         </div>
         <div class="feature-banner"><div><span class="eyebrow">DigitalCoreVision</span><h2>ESKAYVIE</h2><p>Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja</p></div><button class="watch-btn" onclick="showToast('Video pengenalan akan dibuka saat konten dihubungkan.')">▶ &nbsp; TONTON SEKARANG</button></div>
         <div class="feature-image">Area video / banner utama ESKAYVIE<br><small>Gambar referensi dapat dipasang pada tahap integrasi konten</small></div>
@@ -363,7 +385,23 @@ main { max-width:1200px; padding:42px 16px 50px; }
   </div>
 </div>
       </section>
-      <section class="page" id="training"><div class="page-head"><div><h1>Training</h1><div class="subtitle">Materi pembelajaran untuk pengembangan bisnis network.</div><button class="secondary-btn" type="button" onclick="window.loadMemberTraining(true)">Muat Ulang</button></div></div><div class="card"><div class="field"><label for="memberTrainingCategory">Filter kategori</label><select id="memberTrainingCategory"><option value="">Semua kategori</option></select></div><div id="memberTrainingProgress" class="notice" style="margin-bottom:14px">Memuat progres belajar...</div><div id="memberTrainingList" class="section-sub">Memuat materi training...</div></div></section>
+      <section class="page" id="training"><div class="page-head"><div><h1>Training</h1><div class="subtitle">Materi pembelajaran dasar yang dapat diakses seluruh member.</div><button class="secondary-btn" type="button" onclick="window.loadMemberTraining(true)">Muat Ulang</button></div></div><div class="card"><div class="field"><label for="memberTrainingCategory">Filter kategori</label><select id="memberTrainingCategory"><option value="">Semua kategori</option></select></div><div id="memberTrainingProgress" class="notice" style="margin-bottom:14px">Memuat progres belajar...</div><div id="memberTrainingList" class="section-sub">Memuat materi training...</div></div></section>
+      <section class="page" id="premium">
+        <div class="page-head"><div><h1>Premium Center</h1><div class="subtitle">Kenali tools dan manfaat tambahan untuk mengembangkan bisnis Anda.</div></div><span class="status pending">MASA AKTIF 30 HARI</span></div>
+        <div class="premium-promo"><span class="premium-chip">DIGITALCOREVISION 2.0</span><h2>Lebih Terarah. Lebih Terorganisasi. Lebih Produktif.</h2><p>Premium membuka akses ke tools pengelolaan prospek, referral, dan aktivitas bisnis. Harga paket belum ditetapkan dan akan diinformasikan oleh Super Admin.</p><div class="premium-chip-row"><span class="premium-chip">Dashboard & Profil</span><span class="premium-chip">Training</span><span class="premium-chip">Tools bisnis Premium</span></div></div>
+        <div class="card"><h2 class="section-title">Fitur yang tersedia di Premium</h2><p class="section-sub">Preview ini membantu Anda mengenal manfaatnya. Fitur terkunci akan terbuka setelah status Premium aktif.</p>
+          <div class="premium-feature-grid" style="margin-top:15px">
+            <div class="premium-feature"><span class="lock">🔒</span><strong>Affiliate Center</strong><p>Kode referral pribadi, tautan undangan, statistik, dan jaringan member.</p></div>
+            <div class="premium-feature"><span class="lock">🔒</span><strong>Data Leads & Prospect CRM</strong><p>Catat prospek, kelola tahapan komunikasi, dan pantau perkembangan.</p></div>
+            <div class="premium-feature"><span class="lock">🔒</span><strong>Follow-up Management</strong><p>Atur jadwal follow-up dan pantau prospek yang perlu ditindaklanjuti.</p></div>
+            <div class="premium-feature"><span class="lock">🔒</span><strong>Statistik & Laporan Bisnis</strong><p>Lihat ringkasan aktivitas prospek dan performa tindak lanjut.</p></div>
+            <div class="premium-feature"><span class="lock">🔒</span><strong>Training Lanjutan</strong><p>Preview materi pengembangan personal branding, prospecting, dan closing.</p></div>
+            <div class="premium-feature"><span class="lock">🔒</span><strong>Tools Produktivitas</strong><p>Akses terpusat untuk membantu aktivitas bisnis network marketing.</p></div>
+          </div>
+          <div id="myPremiumUpgradeRequestStatus" class="premium-status-box" role="status">Memeriksa status pengajuan upgrade...</div>
+          <form id="premiumUpgradeRequestForm" class="premium-request-form"><div class="field"><label for="premiumUpgradeMessage">Pesan untuk Super Admin (opsional)</label><textarea id="premiumUpgradeMessage" rows="3" maxlength="500" placeholder="Contoh: Saya ingin mengetahui prosedur aktivasi Premium."></textarea></div><button class="primary-btn" id="premiumUpgradeSubmitButton" type="submit">AJUKAN UPGRADE PREMIUM</button><p class="section-sub" style="margin-top:9px">Masa aktif Premium adalah 30 hari. Harga akan diinformasikan oleh Super Admin. Pengajuan ini belum mengaktifkan Premium atau memproses pembayaran.</p></form>
+        </div>
+      </section>
       <section class="page" id="leads">
         <div class="page-head">
           <div><h1>Data Leads</h1><div class="subtitle">Catat prospek, pantau status, dan kelola tindak lanjut Anda.</div></div>
@@ -476,6 +514,7 @@ main { max-width:1200px; padding:42px 16px 50px; }
               <div class="admin-panel-card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px"><h3 style="font-size:16px;margin:0">Aktivasi Premium Terbaru</h3><button class="secondary-btn" onclick="showToast('Daftar aktivasi Premium akan dibuat pada tahap berikutnya.')">Lihat Semua »</button></div><div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Member</th><th>Sponsor</th><th>Status</th><th>Tanggal</th></tr></thead><tbody><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:25px">Belum ada riwayat aktivasi Premium.</td></tr></tbody></table></div></div>
             </div>
             <div class="admin-panel-card" id="admin-members"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px"><div><h3 style="font-size:17px;margin:0 0 5px">Data Member</h3><p style="font-size:11px;color:#6b7280;margin:0">Daftar profil dan status membership dari Supabase.</p></div><button class="secondary-btn" type="button" id="refreshAdminMembers">↻ Muat Ulang</button></div><div class="admin-kpis" id="adminMembershipMetrics" style="margin:12px 0 14px"><div class="admin-kpi"><strong id="adminMetricTotal">—</strong><span>Total Member</span></div><div class="admin-kpi"><strong id="adminMetricFree">—</strong><span>Gratis</span></div><div class="admin-kpi"><strong id="adminMetricPremium">—</strong><span>Premium Aktif</span></div><div class="admin-kpi"><strong id="adminMetricExpired">—</strong><span>Premium Kedaluwarsa</span></div></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"><input id="adminMemberSearch" class="field" style="flex:1;min-width:220px;padding:10px 12px;margin:0;border:1px solid #d1d5db;border-radius:8px" placeholder="Cari nama atau email member..."><select id="adminMembershipFilter" class="field" style="width:min(230px,100%);padding:10px 12px;margin:0;border:1px solid #d1d5db;border-radius:8px"><option value="all">Semua status</option><option value="free">Gratis</option><option value="premium-active">Premium Aktif</option><option value="premium-expired">Premium Kedaluwarsa</option></select></div><div id="adminMembersMessage" style="font-size:12px;color:#64748b;padding:12px 0">Data member belum dimuat.</div><div style="overflow-x:auto"><table class="admin-table" id="adminMembersTable"><thead><tr><th>Nama</th><th>Email</th><th>Membership</th><th>Masa Premium</th><th>Tanggal Daftar</th></tr></thead><tbody></tbody></table></div></div>
+            <div class="admin-panel-card" id="premiumUpgradeRequestsAdmin"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><h3 style="font-size:18px;margin:0 0 6px">Pengajuan Upgrade Premium</h3><p id="premiumUpgradeRequestsMessage" style="font-size:11px;color:#6b7280;margin:0">Memuat pengajuan member...</p></div><button class="secondary-btn" type="button" id="refreshPremiumUpgradeRequests">↻ Muat Ulang Pengajuan</button></div><div style="overflow-x:auto;margin-top:12px"><table class="admin-table" id="premiumUpgradeRequestsTable"><thead><tr><th>Member</th><th>Tanggal</th><th>Pesan</th><th>Status</th><th>Aksi</th></tr></thead><tbody></tbody></table></div><p style="font-size:10px;color:#9ca3af;margin:12px 0 0">Pengajuan bukan bukti pembayaran. Setelah pembayaran diverifikasi, aktifkan Premium melalui formulir Aktivasi Premium di bawah ini.</p></div>
             <div class="admin-panel-card" id="activation"><h3 style="font-size:18px;margin:0 0 6px">Aktivasi Premium</h3><p style="font-size:11px;color:#6b7280;margin:0 0 16px">Aktifkan atau perpanjang Premium setelah pembayaran diverifikasi.</p><form id="premiumActivationForm"><div class="field"><label for="premiumMemberSelect">Pilih member</label><select id="premiumMemberSelect" required><option value="">Memuat daftar member...</option></select></div><div class="form-row"><div class="field"><label for="premiumDuration">Masa aktif (hari)</label><input id="premiumDuration" type="number" min="1" step="1" value="30" required></div><div class="field"><label for="premiumAmount">Nominal pembayaran (Rp, opsional)</label><input id="premiumAmount" type="number" min="0" step="1" placeholder="Contoh: 150000"></div></div><div class="field"><label for="premiumPaymentReference">Referensi pembayaran (opsional)</label><input id="premiumPaymentReference" maxlength="200" placeholder="Contoh: transfer 02/11/2026"></div><div class="field"><label for="premiumNotes">Catatan (opsional)</label><input id="premiumNotes" maxlength="500" placeholder="Catatan verifikasi pembayaran"></div><button class="primary-btn" id="premiumActivationButton" type="submit">Aktifkan Premium</button><span id="premiumActivationMessage" style="font-size:11px;color:#64748b;margin-left:10px" role="status"></span></form><p style="font-size:10px;color:#9ca3af;margin:14px 0 0">Durasi fleksibel. Default 30 hari; perpanjangan sebelum masa aktif habis akan menambahkan durasi dari tanggal kedaluwarsa sebelumnya.</p></div>
             <div class="admin-panel-card" id="history"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap"><div><h3 style="font-size:18px;margin:0 0 6px">Riwayat Membership</h3><p style="font-size:11px;color:#6b7280;margin:0 0 14px">Catatan aktivasi, perpanjangan, dan penyesuaian Premium yang diverifikasi Super Admin.</p></div><button class="secondary-btn" type="button" id="refreshMembershipHistory">↻ Muat Ulang Riwayat</button></div><div class="admin-kpis" style="margin:8px 0 14px"><div class="admin-kpi"><strong id="historyTotal">—</strong><span>Total Catatan</span></div><div class="admin-kpi"><strong id="historyActivations">—</strong><span>Aktivasi</span></div><div class="admin-kpi"><strong id="historyRenewals">—</strong><span>Perpanjangan</span></div><div class="admin-kpi"><strong id="historyRevenue">—</strong><span>Total Pembayaran Tercatat</span></div></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"><input id="membershipHistorySearch" class="field" style="flex:1;min-width:220px;padding:10px 12px;margin:0" placeholder="Cari nama, email, atau referensi pembayaran..."><select id="membershipHistoryFilter" class="field" style="width:min(220px,100%);padding:10px 12px;margin:0"><option value="all">Semua aktivitas</option><option value="activation">Aktivasi</option><option value="renewal">Perpanjangan</option><option value="adjustment">Penyesuaian</option></select></div><div id="membershipHistoryMessage" style="font-size:12px;color:#64748b;padding:8px 0">Riwayat belum dimuat.</div><div style="overflow-x:auto"><table class="admin-table" id="membershipHistoryTable"><thead><tr><th>Member</th><th>Aktivitas</th><th>Durasi</th><th>Masa Berlaku Baru</th><th>Pembayaran</th><th>Referensi</th><th>Diverifikasi</th></tr></thead><tbody></tbody></table></div></div><div class="admin-panel-card" id="dashboardDisplaySettings"><h3 style="font-size:16px;margin:0 0 8px">Pengaturan Tampilan Dashboard Member</h3><p style="font-size:11px;color:#6b7280;margin:0 0 14px">Ubah teks sambutan dan banner yang dilihat member pada halaman Dashboard.</p><div class="field"><label>Teks label banner</label><input id="bannerEyebrowInput" value="DigitalCoreVision"></div><div class="field"><label>Judul banner</label><input id="bannerTitleInput" value="ESKAYVIE"></div><div class="field"><label>Deskripsi banner</label><input id="bannerDescriptionInput" value="Bisnis Network Marketing Yang Dijalankan Secara Online Dari Mana Saja"></div><button class="primary-btn" type="button" onclick="saveDashboardDisplaySettings()">Simpan Pengaturan Tampilan</button><p style="font-size:10px;color:#9ca3af;margin:12px 0 0">Untuk tahap preview, pengaturan tersimpan di browser ini. Penyimpanan ke database agar berlaku untuk semua member akan dihubungkan pada tahap integrasi berikutnya.</p></div>
         <div class="admin-panel-card" style="margin-top:18px">
@@ -502,7 +541,18 @@ main { max-width:1200px; padding:42px 16px 50px; }
 <div class="toast" id="toast"></div>
 <div class="modal-backdrop" id="modal"><div class="modal"><h2>Tambah Member</h2><p>Formulir demonstrasi. Akun sungguhan baru dibuat setelah integrasi Supabase Auth pada tahap implementasi backend.</p><div class="field"><label>Nama lengkap</label><input id="newName" placeholder="Nama member"></div><div class="field"><label>Email</label><input id="newEmail" type="email" placeholder="nama@email.com"></div><div class="field"><label>Organisasi</label><input id="newOrg" placeholder="Nama organisasi"></div><div class="modal-actions"><button class="secondary-btn" onclick="closeModal()">Batal</button><button class="primary-btn" onclick="addMember()">Simpan Demo</button></div></div></div>
 <script>
+window.dcvMembershipStatus = 'checking';
+function applyMemberFeatureAccess(isPremium) {
+  const banner = document.getElementById('freeMemberUpgradeBanner');
+  if (banner) banner.hidden = Boolean(isPremium);
+  ['dashboardFollowUpCard','prospectTrackerCard'].forEach(id => { const el = document.getElementById(id); if (el) el.hidden = !isPremium; });
+  document.querySelectorAll('.premium-nav-lock').forEach(el => { el.style.display = isPremium ? 'none' : 'inline'; });
+}
 function navigate(page) {
+  if (document.body.classList.contains('member-authenticated') && ['leads','affiliate'].includes(page)) {
+    if (window.dcvMembershipStatus === 'checking') { showToast('Sedang memeriksa status membership. Coba kembali sebentar lagi.'); return; }
+    if (window.dcvMembershipStatus !== 'premium') { showToast('Fitur ini tersedia untuk Premium Member. Silakan lihat preview di Premium Center.'); page = 'premium'; }
+  }
   if (document.body.classList.contains('member-authenticated') && page === 'content') {
     showToast('Menu Konten hanya dapat dikelola oleh Super Admin. Materi tersedia di menu Training.');
     page = 'training';
@@ -511,6 +561,8 @@ function navigate(page) {
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.page === page));
   if (page === 'admin' && typeof window.loadAdminMembers === 'function') window.loadAdminMembers();
   if (page === 'admin' && typeof window.loadTrainingCertificatesAdmin === 'function') window.loadTrainingCertificatesAdmin();
+  if (page === 'admin' && typeof window.loadPremiumUpgradeRequestsAdmin === 'function') window.loadPremiumUpgradeRequestsAdmin();
+  if (page === 'premium' && typeof window.loadMyPremiumUpgradeRequest === 'function') window.loadMyPremiumUpgradeRequest();
   if (page === 'leads' && typeof window.loadLeads === 'function') { window.loadLeads(); if (typeof window.loadLeadReport === 'function') window.loadLeadReport(); }
   if (page === 'dashboard' && typeof window.loadDashboardFollowUps === 'function') window.loadDashboardFollowUps();
   if (page === 'content' && typeof window.loadContentModule === 'function') window.loadContentModule();
@@ -1046,6 +1098,103 @@ enterMemberApp(
       memberSubmitButton.textContent = memberSignupMode ? 'Buat Akun Member' : 'Login Member';
     }
   });
+
+  async function loadMyPremiumUpgradeRequest() {
+    const box = document.getElementById('myPremiumUpgradeRequestStatus');
+    const button = document.getElementById('premiumUpgradeSubmitButton');
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!box || !token) return;
+    box.textContent = 'Memeriksa status pengajuan...';
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/premium_upgrade_requests?select=id,status,requested_at,admin_note&order=requested_at.desc&limit=1', { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token } });
+      const rows = await response.json();
+      if (!response.ok) throw new Error(rows.message || rows.error || 'Gagal membaca pengajuan.');
+      const latest = rows[0];
+      if (!latest) { box.textContent = 'Belum ada pengajuan upgrade. Anda dapat mengirim permintaan kepada Super Admin.'; if (button) button.disabled = false; return; }
+      const date = latest.requested_at ? new Date(latest.requested_at).toLocaleString('id-ID') : '—';
+      const labels = { pending:'Menunggu ditinjau', contacted:'Sudah ditindaklanjuti · menunggu proses berikutnya', approved:'Disetujui · ikuti instruksi Super Admin untuk verifikasi pembayaran', rejected:'Pengajuan sebelumnya ditolak' };
+      box.textContent = 'Pengajuan terakhir: ' + (labels[latest.status] || latest.status) + ' · ' + date + (latest.admin_note ? ' · Catatan: ' + latest.admin_note : '');
+      if (button) button.disabled = ['pending','contacted','approved'].includes(latest.status);
+    } catch (error) { box.textContent = 'Status pengajuan belum dapat dimuat: ' + (error.message || 'Periksa koneksi database.'); if (button) button.disabled = true; }
+  }
+
+  async function submitPremiumUpgradeRequest(event) {
+    event.preventDefault();
+    const button = document.getElementById('premiumUpgradeSubmitButton');
+    const box = document.getElementById('myPremiumUpgradeRequestStatus');
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!token || !button || !box) return;
+    if (window.dcvMembershipStatus === 'premium') { box.textContent = 'Akun Anda sudah Premium Aktif.'; return; }
+    button.disabled = true; button.textContent = 'Mengirim pengajuan...';
+    try {
+      const message = document.getElementById('premiumUpgradeMessage').value.trim();
+      const response = await fetch(SUPABASE_URL + '/rest/v1/premium_upgrade_requests', {
+        method:'POST', headers:{ apikey:SUPABASE_PUBLISHABLE_KEY, Authorization:'Bearer '+token, 'Content-Type':'application/json', Prefer:'return=representation' },
+        body:JSON.stringify({ message:message || null })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || result.error || 'Pengajuan belum dapat dikirim.');
+      document.getElementById('premiumUpgradeMessage').value = '';
+      box.textContent = 'Pengajuan berhasil dikirim. Super Admin akan meninjau dan menghubungi Anda untuk informasi harga serta proses pembayaran.';
+      await loadMyPremiumUpgradeRequest();
+    } catch (error) { box.textContent = 'Gagal mengirim pengajuan: ' + (error.message || 'Periksa koneksi dan kebijakan RLS.'); button.disabled = false; button.textContent = 'AJUKAN UPGRADE PREMIUM'; }
+  }
+
+  async function loadPremiumUpgradeRequestsAdmin() {
+    const message = document.getElementById('premiumUpgradeRequestsMessage');
+    const body = document.querySelector('#premiumUpgradeRequestsTable tbody');
+    const token = sessionStorage.getItem('dcv_access_token');
+    if (!message || !body) return;
+    if (!token) { message.textContent = 'Sesi Super Admin tidak ditemukan.'; return; }
+    message.textContent = 'Mengambil pengajuan dari database...'; body.replaceChildren();
+    const headers = { apikey:SUPABASE_PUBLISHABLE_KEY, Authorization:'Bearer '+token };
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/premium_upgrade_requests?select=id,user_id,message,status,requested_at,admin_note&order=requested_at.desc', { headers });
+      const rows = await response.json();
+      if (!response.ok) throw new Error(rows.message || rows.error || 'Gagal mengambil daftar pengajuan.');
+      const profileResponse = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email', { headers });
+      const profiles = await profileResponse.json();
+      if (!profileResponse.ok) throw new Error(profiles.message || profiles.error || 'Gagal mengambil profil member.');
+      const profileMap = new Map(profiles.map(profile => [profile.id,profile]));
+      rows.forEach(item => {
+        const profile = profileMap.get(item.user_id) || {};
+        const tr = document.createElement('tr');
+        const cells = [
+          (profile.full_name || 'Member') + ' · ' + (profile.email || item.user_id.slice(0,8)),
+          item.requested_at ? new Date(item.requested_at).toLocaleString('id-ID') : '—',
+          item.message || '—',
+          ({pending:'Menunggu',contacted:'Dihubungi',approved:'Disetujui',rejected:'Ditolak'}[item.status] || item.status)
+        ];
+        cells.forEach((value,index) => { const td=document.createElement('td'); td.textContent=value; td.style.padding='10px 9px'; td.style.borderBottom='1px solid #e5e7eb'; if(index===2){td.style.whiteSpace='normal';td.style.minWidth='180px';} tr.appendChild(td); });
+        const action=document.createElement('td'); action.style.padding='10px 9px'; action.style.borderBottom='1px solid #e5e7eb';
+        if(['pending','contacted'].includes(item.status)){
+          const next=document.createElement('button'); next.type='button'; next.className='secondary-btn'; next.textContent=item.status==='pending'?'Tandai Dihubungi':'Tandai Disetujui';
+          next.addEventListener('click',()=>updatePremiumUpgradeRequest(item.id,item.status==='pending'?'contacted':'approved')); action.appendChild(next);
+          if(item.status==='pending'){const reject=document.createElement('button');reject.type='button';reject.className='secondary-btn';reject.textContent='Tolak';reject.style.marginLeft='6px';reject.addEventListener('click',()=>updatePremiumUpgradeRequest(item.id,'rejected'));action.appendChild(reject);}
+        } else action.textContent=item.status==='approved'?'Lanjut verifikasi & aktivasi':'—';
+        tr.appendChild(action); body.appendChild(tr);
+      });
+      message.textContent = rows.length ? 'Menampilkan ' + rows.length + ' pengajuan upgrade.' : 'Belum ada pengajuan upgrade dari member.';
+    } catch (error) { message.textContent='Gagal memuat pengajuan: '+(error.message || 'Periksa RLS Supabase.'); }
+  }
+
+  async function updatePremiumUpgradeRequest(id,status) {
+    const token=sessionStorage.getItem('dcv_access_token'); if(!token)return;
+    try {
+      const response=await fetch(SUPABASE_URL+'/rest/v1/premium_upgrade_requests?id=eq.'+encodeURIComponent(id),{
+        method:'PATCH',headers:{apikey:SUPABASE_PUBLISHABLE_KEY,Authorization:'Bearer '+token,'Content-Type':'application/json',Prefer:'return=minimal'},
+        body:JSON.stringify({status,reviewed_at:new Date().toISOString()})
+      });
+      if(!response.ok){const error=await response.json();throw new Error(error.message||error.error||'Gagal memperbarui status.');}
+      await loadPremiumUpgradeRequestsAdmin(); showToast('Status pengajuan berhasil diperbarui.');
+    } catch(error){showToast('Gagal memperbarui pengajuan: '+(error.message||'Periksa koneksi.'));}
+  }
+
+  window.loadMyPremiumUpgradeRequest=loadMyPremiumUpgradeRequest;
+  window.loadPremiumUpgradeRequestsAdmin=loadPremiumUpgradeRequestsAdmin;
+  document.getElementById('premiumUpgradeRequestForm')?.addEventListener('submit',submitPremiumUpgradeRequest);
+  document.getElementById('refreshPremiumUpgradeRequests')?.addEventListener('click',()=>loadPremiumUpgradeRequestsAdmin());
+
   async function loadMemberMembershipStatus(token) {
     const card = document.getElementById('memberMembershipStatusCard');
     const title = document.getElementById('memberMembershipStatusTitle');
@@ -1072,18 +1221,21 @@ enterMemberApp(
       const hasValidExpiry = Boolean(expiry && !Number.isNaN(expiry.getTime()));
       const isPremiumActive = Boolean(membership && membership.membership_type === 'premium' && hasValidExpiry && expiry.getTime() > Date.now());
       if (isPremiumActive) {
+        window.dcvMembershipStatus = 'premium'; applyMemberFeatureAccess(true); loadAffiliateCenter();
         title.textContent = 'Premium Aktif';
         detail.textContent = 'Akses Premium berlaku sampai ' + expiry.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) + '.';
         badge.textContent = 'PREMIUM';
         badge.className = 'status';
         card.style.borderLeftColor = '#0d9488';
       } else if (membership && membership.membership_type === 'premium' && hasValidExpiry) {
+        window.dcvMembershipStatus = 'free'; applyMemberFeatureAccess(false);
         title.textContent = 'Free Member';
         detail.textContent = 'Masa Premium berakhir pada ' + expiry.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) + '. Akun menggunakan status Free; riwayat membership dan jaringan referral tetap tersimpan.';
         badge.textContent = 'FREE · EXPIRED';
         badge.className = 'status pending';
         card.style.borderLeftColor = '#d97706';
       } else {
+        window.dcvMembershipStatus = 'free'; applyMemberFeatureAccess(false);
         title.textContent = 'Free Member';
         detail.textContent = 'Akun Anda menggunakan akses Free Member. Anda dapat memperpanjang Premium melalui Super Admin.';
         badge.textContent = 'FREE';
@@ -1091,6 +1243,7 @@ enterMemberApp(
         card.style.borderLeftColor = '#64748b';
       }
     } catch (error) {
+      window.dcvMembershipStatus = 'unknown'; applyMemberFeatureAccess(false);
       title.textContent = 'Status membership belum dapat dimuat';
       detail.textContent = error.message || 'Periksa koneksi dan kebijakan RLS Supabase.';
       badge.textContent = 'BELUM TERVERIFIKASI';
@@ -1128,9 +1281,9 @@ enterMemberApp(
     document.body.classList.remove('admin-authenticated');
     document.body.classList.add('member-authenticated');
     document.getElementById('systemSettingsCard').hidden = true;
+    window.dcvMembershipStatus = 'checking'; applyMemberFeatureAccess(false);
     navigate('dashboard');
     loadMemberMembershipStatus(token);
-    loadAffiliateCenter();
   }
 
   
