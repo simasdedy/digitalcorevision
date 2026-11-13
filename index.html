@@ -1110,11 +1110,11 @@ enterMemberApp(
       const rows = await response.json();
       if (!response.ok) throw new Error(rows.message || rows.error || 'Gagal membaca pengajuan.');
       const latest = rows[0];
-      if (!latest) { box.textContent = 'Belum ada pengajuan upgrade. Anda dapat mengirim permintaan kepada Super Admin.'; if (button) button.disabled = false; return; }
+      if (!latest) { box.textContent = 'Belum ada pengajuan upgrade. Anda dapat mengirim permintaan kepada Super Admin.'; if (button) { button.disabled = false; button.textContent = 'AJUKAN UPGRADE PREMIUM'; } return; }
       const date = latest.requested_at ? new Date(latest.requested_at).toLocaleString('id-ID') : '—';
       const labels = { pending:'Menunggu ditinjau', contacted:'Sudah ditindaklanjuti · menunggu proses berikutnya', approved:'Disetujui · ikuti instruksi Super Admin untuk verifikasi pembayaran', rejected:'Pengajuan sebelumnya ditolak' };
       box.textContent = 'Pengajuan terakhir: ' + (labels[latest.status] || latest.status) + ' · ' + date + (latest.admin_note ? ' · Catatan: ' + latest.admin_note : '');
-      if (button) button.disabled = ['pending','contacted','approved'].includes(latest.status);
+      if (button) { button.disabled = ['pending','contacted','approved'].includes(latest.status); button.textContent = latest.status === 'rejected' ? 'AJUKAN ULANG UPGRADE' : latest.status === 'approved' ? 'MENUNGGU AKTIVASI PREMIUM' : latest.status === 'contacted' ? 'MENUNGGU TINDAK LANJUT' : 'PENGAJUAN SEDANG DITINJAU'; }
     } catch (error) { box.textContent = 'Status pengajuan belum dapat dimuat: ' + (error.message || 'Periksa koneksi database.'); if (button) button.disabled = true; }
   }
 
