@@ -1982,14 +1982,29 @@ async function loadAffiliateCenter() {
             const title = document.createElement('strong'); title.textContent = 'Riwayat Aktivitas · ' + (item.full_name || 'Prospek'); title.style.display = 'block'; title.style.marginBottom = '10px';
             detailCell.appendChild(title);
             if (!activities.length) { const empty = document.createElement('div'); empty.textContent = 'Belum ada aktivitas yang tercatat.'; empty.style.cssText = 'font-size:12px;color:#64748b'; detailCell.appendChild(empty); }
+            const activityLabels = {
+              created: 'Prospek dibuat',
+              updated: 'Data atau jadwal prospek diperbarui',
+              status_changed: 'Status prospek berubah',
+              whatsapp_opened: 'WhatsApp dibuka',
+              message_copied: 'Pesan follow-up disalin'
+            };
             activities.forEach(activity => {
               const entry = document.createElement('div');
-              entry.style.cssText = 'display:flex;gap:12px;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:12px';
-              const marker = document.createElement('span'); marker.textContent = '•'; marker.style.cssText = 'font-size:20px;color:#0f766e;line-height:14px';
-              const content = document.createElement('div');
-              const desc = document.createElement('div'); desc.textContent = activity.description; desc.style.fontWeight = '600';
-              const date = document.createElement('div'); date.textContent = new Date(activity.created_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }); date.style.cssText = 'color:#64748b;margin-top:3px';
-              content.append(desc, date); entry.append(marker, content); detailCell.appendChild(entry);
+              entry.style.cssText = 'display:flex;gap:12px;padding:11px 0;border-bottom:1px solid #e2e8f0;font-size:12px';
+              const marker = document.createElement('span'); marker.textContent = '●'; marker.style.cssText = 'font-size:12px;color:#0f766e;line-height:18px';
+              const content = document.createElement('div'); content.style.cssText = 'min-width:0;flex:1';
+              const label = document.createElement('div');
+              label.textContent = activityLabels[activity.activity_type] || activity.activity_type || 'Aktivitas prospek';
+              label.style.cssText = 'font-size:11px;font-weight:700;color:#0f766e;margin-bottom:3px';
+              const desc = document.createElement('div');
+              desc.textContent = activity.description || 'Tidak ada keterangan tambahan.';
+              desc.style.cssText = 'font-weight:600;color:#1e293b;overflow-wrap:anywhere';
+              const date = document.createElement('div');
+              const parsedDate = new Date(activity.created_at);
+              date.textContent = Number.isNaN(parsedDate.getTime()) ? 'Waktu tidak tersedia' : parsedDate.toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' });
+              date.style.cssText = 'color:#64748b;margin-top:4px';
+              content.append(label, desc, date); entry.append(marker, content); detailCell.appendChild(entry);
             });
           } catch (error) { detailCell.textContent = error.message || 'Gagal memuat riwayat.'; }
         });
