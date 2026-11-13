@@ -213,6 +213,10 @@ body.admin-authenticated .member-nav [data-page="premium"] { display:none; }
 /* AFFILIATE REFERRAL LIST - RESPONSIVE */
 #affiliate, #affiliate .content-grid, #affiliate .card, #affiliateReferralList { min-width:0; max-width:100%; }
 #affiliateReferralCode, #affiliateReferralLink { overflow-wrap:anywhere; word-break:break-word; }
+.affiliate-referral-share-row { display:flex; align-items:center; flex-wrap:wrap; gap:10px; min-width:0; margin-top:8px; }
+.affiliate-referral-link-text { flex:1 1 220px; min-width:0; overflow-wrap:anywhere; word-break:break-word; font-size:12px; line-height:1.6; }
+.affiliate-whatsapp-share { display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; min-height:40px; padding:9px 13px; border-radius:9px; background:#16a34a; color:#fff !important; font-size:12px; font-weight:700; text-decoration:none; white-space:normal; text-align:center; }
+.affiliate-whatsapp-share:hover { background:#15803d; }
 .affiliate-referral-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:10px; margin-top:12px; width:100%; }
 .affiliate-referral-card { min-width:0; border:1px solid #e2e8f0; border-radius:12px; padding:13px; background:light-dark(#fff,#172235); }
 .affiliate-referral-name { display:block; font-size:14px; line-height:1.4; overflow-wrap:anywhere; margin-bottom:9px; }
@@ -225,6 +229,8 @@ body.admin-authenticated .member-nav [data-page="premium"] { display:none; }
   #affiliate .content-grid > .card { grid-column:1/-1 !important; width:100%; }
   #affiliate .page-head, #affiliate .card { min-width:0; }
   #affiliateReferralCode, #affiliateReferralLink { line-height:1.6; font-size:12px; }
+  .affiliate-referral-share-row { align-items:stretch; flex-direction:column; }
+  .affiliate-whatsapp-share { width:100%; }
   .affiliate-referral-cards { grid-template-columns:minmax(0,1fr); }
 }
  
@@ -1724,7 +1730,24 @@ async function loadAffiliateCenter() {
     const code = codes[0].referral_code;
     const referralLink = window.location.origin + window.location.pathname + '?ref=' + encodeURIComponent(code);
     codeBox.textContent = code;
-    linkBox.textContent = referralLink;
+
+    // Link tetap terlihat dan tersedia tombol untuk membagikannya melalui WhatsApp.
+    linkBox.replaceChildren();
+    const referralShareRow = document.createElement('div');
+    referralShareRow.className = 'affiliate-referral-share-row';
+    const referralLinkText = document.createElement('span');
+    referralLinkText.className = 'affiliate-referral-link-text';
+    referralLinkText.textContent = referralLink;
+    const whatsappShareButton = document.createElement('a');
+    whatsappShareButton.className = 'affiliate-whatsapp-share';
+    whatsappShareButton.href = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(
+      'Halo! Yuk bergabung bersama saya di DIGITALCOREVISION. Daftar melalui link referral ini: ' + referralLink
+    );
+    whatsappShareButton.target = '_blank';
+    whatsappShareButton.rel = 'noopener noreferrer';
+    whatsappShareButton.textContent = 'Bagikan via WhatsApp';
+    referralShareRow.append(referralLinkText, whatsappShareButton);
+    linkBox.appendChild(referralShareRow);
 
     const referralResponse = await fetch(
       SUPABASE_URL + '/rest/v1/rpc/get_my_referrals',
