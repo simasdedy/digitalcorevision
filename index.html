@@ -1480,6 +1480,8 @@ enterMemberApp(
       const isPremiumActive = Boolean(membership && membership.membership_type === 'premium' && hasValidExpiry && expiry.getTime() > Date.now());
       if (isPremiumActive) {
         window.dcvMembershipStatus = 'premium'; applyMemberFeatureAccess(true); loadAffiliateCenter();
+        // Status Premium sudah terverifikasi; muat pengingat Dashboard tanpa perlu berpindah tab.
+        if (typeof window.loadDashboardFollowUps === 'function' && document.getElementById('dashboard')?.classList.contains('active')) window.loadDashboardFollowUps();
         title.textContent = 'Premium Aktif';
         detail.textContent = 'Akses Premium berlaku sampai ' + expiry.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) + '.';
         badge.textContent = 'PREMIUM';
