@@ -1102,20 +1102,39 @@ enterMemberApp(
   async function loadMyPremiumUpgradeRequest() {
     const box = document.getElementById('myPremiumUpgradeRequestStatus');
     const button = document.getElementById('premiumUpgradeSubmitButton');
+    const form = document.getElementById('premiumUpgradeRequestForm');
     const token = sessionStorage.getItem('dcv_access_token');
     if (!box || !token) return;
-    box.textContent = 'Memeriksa status pengajuan...';
+    box.textContent = 'Memeriksa status membership dan pengajuan...';
     try {
-      const response = await fetch(SUPABASE_URL + '/rest/v1/premium_upgrade_requests?select=id,status,requested_at,admin_note&order=requested_at.desc&limit=1', { headers: { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token } });
+      const headers = { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token };
+      const userResponse = await fetch(SUPABASE_URL + '/auth/v1/user', { headers });
+      const user = await userResponse.json();
+      if (!userResponse.ok || !user.id) throw new Error(user.message || 'Sesi akun tidak dapat diverifikasi.');
+      const membershipResponse = await fetch(SUPABASE_URL + '/rest/v1/member_memberships?select=membership_type,premium_expires_at&member_id=eq.' + encodeURIComponent(user.id) + '&limit=1', { headers });
+      const memberships = await membershipResponse.json();
+      if (!membershipResponse.ok) throw new Error(memberships.message || memberships.error || 'Gagal membaca membership.');
+      const membership = memberships[0] || null;
+      const expiry = membership && membership.premium_expires_at ? new Date(membership.premium_expires_at) : null;
+      const isPremiumActive = Boolean(membership && membership.membership_type === 'premium' && expiry && !Number.isNaN(expiry.getTime()) && expiry.getTime() > Date.now());
+      if (isPremiumActive) {
+        window.dcvMembershipStatus = 'premium';
+        box.textContent = 'Premium Anda sudah aktif sampai ' + expiry.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) + '. Tidak perlu mengajukan upgrade lagi.';
+        if (button) { button.disabled = true; button.textContent = 'PREMIUM SUDAH AKTIF'; }
+        if (form) form.hidden = true;
+        return;
+      }
+      if (form) form.hidden = false;
+      const response = await fetch(SUPABASE_URL + '/rest/v1/premium_upgrade_requests?select=id,status,requested_at,admin_note&order=requested_at.desc&limit=1', { headers });
       const rows = await response.json();
       if (!response.ok) throw new Error(rows.message || rows.error || 'Gagal membaca pengajuan.');
       const latest = rows[0];
       if (!latest) { box.textContent = 'Belum ada pengajuan upgrade. Anda dapat mengirim permintaan kepada Super Admin.'; if (button) { button.disabled = false; button.textContent = 'AJUKAN UPGRADE PREMIUM'; } return; }
       const date = latest.requested_at ? new Date(latest.requested_at).toLocaleString('id-ID') : '—';
-      const labels = { pending:'Menunggu ditinjau', contacted:'Sudah ditindaklanjuti · menunggu proses berikutnya', approved:'Disetujui · ikuti instruksi Super Admin untuk verifikasi pembayaran', rejected:'Pengajuan sebelumnya ditolak' };
+      const labels = { pending:'Menunggu ditinjau', contacted:'Sudah ditindaklanjuti · menunggu proses berikutnya', approved:'Disetujui · menunggu verifikasi pembayaran dan aktivasi oleh Super Admin', rejected:'Pengajuan sebelumnya ditolak' };
       box.textContent = 'Pengajuan terakhir: ' + (labels[latest.status] || latest.status) + ' · ' + date + (latest.admin_note ? ' · Catatan: ' + latest.admin_note : '');
       if (button) { button.disabled = ['pending','contacted','approved'].includes(latest.status); button.textContent = latest.status === 'rejected' ? 'AJUKAN ULANG UPGRADE' : latest.status === 'approved' ? 'MENUNGGU AKTIVASI PREMIUM' : latest.status === 'contacted' ? 'MENUNGGU TINDAK LANJUT' : 'PENGAJUAN SEDANG DITINJAU'; }
-    } catch (error) { box.textContent = 'Status pengajuan belum dapat dimuat: ' + (error.message || 'Periksa koneksi database.'); if (button) button.disabled = true; }
+    } catch (error) { box.textContent = 'Status membership/pengajuan belum dapat dimuat: ' + (error.message || 'Periksa koneksi database.'); if (button) button.disabled = true; }
   }
 
   async function submitPremiumUpgradeRequest(event) {
