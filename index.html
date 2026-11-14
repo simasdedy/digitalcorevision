@@ -3153,8 +3153,7 @@ async function loadAffiliateCenter() {
       showToast('Izinkan pop-up untuk membuka sertifikat.');
       return;
     }
-    popup.document.write('<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Menerbitkan Sertifikat</title></head><body style="font-family:Arial;padding:40px;color:#12385b">Menghubungi database sertifikat DIGITALCOREVISION...
-</html>');
+    popup.document.write('<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Menerbitkan Sertifikat</title></head><body style="font-family:Arial;padding:40px;color:#12385b">Menghubungi database sertifikat DIGITALCOREVISION...</body></html>');
     try {
       const response = await fetch(BASE + '/rest/v1/rpc/issue_training_certificate', {
         method:'POST',
