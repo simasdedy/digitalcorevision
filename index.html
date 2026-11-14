@@ -3154,92 +3154,7 @@ async function loadAffiliateCenter() {
       return;
     }
     popup.document.write('<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Menerbitkan Sertifikat</title></head><body style="font-family:Arial;padding:40px;color:#12385b">Menghubungi database sertifikat DIGITALCOREVISION...
-<script>
-(function () {
-  const SUPABASE_URL = 'https://slygdkibtwgepjxsndjo.supabase.co';
-  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
-  const byId = id => document.getElementById(id);
-  let currentProfileUserId = null;
-
-  function profileHeaders(token, extra = {}) {
-    return { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token, ...extra };
-  }
-
-  function normalizeIndonesianPhone(value) {
-    let digits = String(value || '').replace(/\\D/g, '');
-    if (!digits) return '';
-    if (digits.startsWith('0062')) digits = digits.slice(2);
-    else if (digits.startsWith('008')) digits = digits.slice(2);
-    if (digits.startsWith('08')) digits = '62' + digits.slice(1);
-    else if (digits.startsWith('8')) digits = '62' + digits;
-    else if (digits.startsWith('0')) digits = '62' + digits.slice(1);
-    if (!digits.startsWith('62')) throw new Error('Gunakan nomor WhatsApp Indonesia yang diawali 08 atau 62.');
-    if (digits.length < 10 || digits.length > 15) throw new Error('Panjang nomor WhatsApp tidak valid. Periksa kembali nomor Anda.');
-    return digits;
-  }
-
-  async function loadMemberProfile() {
-    const token = sessionStorage.getItem('dcv_access_token');
-    const message = byId('profileMessage');
-    if (!token) { if (message) message.textContent = 'Sesi login tidak ditemukan. Silakan login kembali.'; return; }
-    if (message) message.textContent = 'Memuat profil...';
-    try {
-      const userResponse = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: profileHeaders(token) });
-      const user = await userResponse.json();
-      if (!userResponse.ok || !user.id) throw new Error(user.message || 'Sesi akun tidak dapat diverifikasi.');
-      currentProfileUserId = user.id;
-      const response = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email,phone&id=eq.' + encodeURIComponent(user.id), { headers: profileHeaders(token) });
-      const rows = await response.json();
-      if (!response.ok) throw new Error(rows.message || rows.details || 'Gagal memuat profil (' + response.status + ').');
-      const profile = rows && rows[0] ? rows[0] : {};
-      if (byId('profileName')) byId('profileName').value = profile.full_name || user.user_metadata?.full_name || '';
-      if (byId('profilePhone')) byId('profilePhone').value = profile.phone || '';
-      if (byId('profileEmail')) byId('profileEmail').value = profile.email || user.email || '';
-      if (message) message.textContent = profile.phone ? 'Profil berhasil dimuat.' : 'Silakan lengkapi nomor WhatsApp agar dapat menerima pengingat.';
-    } catch (error) {
-      if (message) message.textContent = 'Gagal memuat profil: ' + error.message;
-    }
-  }
-
-  async function saveMemberProfile() {
-    const token = sessionStorage.getItem('dcv_access_token');
-    const button = byId('saveProfileButton');
-    const message = byId('profileMessage');
-    if (!token) { if (message) message.textContent = 'Sesi login tidak ditemukan. Silakan login kembali.'; return; }
-    const fullName = (byId('profileName')?.value || '').trim();
-    if (!fullName) { if (message) message.textContent = 'Nama lengkap wajib diisi.'; byId('profileName')?.focus(); return; }
-    let phone;
-    try { phone = normalizeIndonesianPhone(byId('profilePhone')?.value || ''); }
-    catch (error) { if (message) message.textContent = error.message; byId('profilePhone')?.focus(); return; }
-    if (!currentProfileUserId) { await loadMemberProfile(); }
-    if (!currentProfileUserId) { if (message) message.textContent = 'Profil belum berhasil dimuat. Muat ulang halaman Profil lalu coba lagi.'; return; }
-    if (button) { button.disabled = true; button.textContent = 'Menyimpan...'; }
-    if (message) message.textContent = 'Menyimpan perubahan profil...';
-    try {
-      const response = await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(currentProfileUserId), {
-        method: 'PATCH',
-        headers: profileHeaders(token, { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
-        body: JSON.stringify({ full_name: fullName, phone: phone || null, updated_at: new Date().toISOString() })
-      });
-      if (!response.ok) {
-        const detail = await response.text();
-        throw new Error(detail || 'Gagal menyimpan profil (' + response.status + ').');
-      }
-      if (typeof window.setMemberWelcomeName === 'function') window.setMemberWelcomeName(fullName);
-      if (message) message.textContent = 'Profil berhasil disimpan. Nomor WhatsApp: ' + (phone || 'belum diisi') + '.';
-    } catch (error) {
-      if (message) message.textContent = 'Gagal menyimpan profil: ' + error.message;
-    } finally {
-      if (button) { button.disabled = false; button.textContent = 'Simpan Profil'; }
-    }
-  }
-
-  window.loadMemberProfile = loadMemberProfile;
-  byId('saveProfileButton')?.addEventListener('click', saveMemberProfile);
-})();
-</script>
-
-</body></html>');
+</html>');
     try {
       const response = await fetch(BASE + '/rest/v1/rpc/issue_training_certificate', {
         method:'POST',
@@ -3411,6 +3326,91 @@ async function loadAffiliateCenter() {
   document.getElementById('memberTrainingCategory')?.addEventListener('change',renderMember);
   window.loadContentModule = loadAdmin;
   window.loadMemberTraining = loadMember;
+})();
+</script>
+
+<script>
+(function () {
+  const SUPABASE_URL = 'https://slygdkibtwgepjxsndjo.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
+  const byId = id => document.getElementById(id);
+  let currentProfileUserId = null;
+
+  function profileHeaders(token, extra = {}) {
+    return { apikey: SUPABASE_PUBLISHABLE_KEY, Authorization: 'Bearer ' + token, ...extra };
+  }
+
+  function normalizeIndonesianPhone(value) {
+    let digits = String(value || '').replace(/\\D/g, '');
+    if (!digits) return '';
+    if (digits.startsWith('0062')) digits = digits.slice(2);
+    else if (digits.startsWith('008')) digits = digits.slice(2);
+    if (digits.startsWith('08')) digits = '62' + digits.slice(1);
+    else if (digits.startsWith('8')) digits = '62' + digits;
+    else if (digits.startsWith('0')) digits = '62' + digits.slice(1);
+    if (!digits.startsWith('62')) throw new Error('Gunakan nomor WhatsApp Indonesia yang diawali 08 atau 62.');
+    if (digits.length < 10 || digits.length > 15) throw new Error('Panjang nomor WhatsApp tidak valid. Periksa kembali nomor Anda.');
+    return digits;
+  }
+
+  async function loadMemberProfile() {
+    const token = sessionStorage.getItem('dcv_access_token');
+    const message = byId('profileMessage');
+    if (!token) { if (message) message.textContent = 'Sesi login tidak ditemukan. Silakan login kembali.'; return; }
+    if (message) message.textContent = 'Memuat profil...';
+    try {
+      const userResponse = await fetch(SUPABASE_URL + '/auth/v1/user', { headers: profileHeaders(token) });
+      const user = await userResponse.json();
+      if (!userResponse.ok || !user.id) throw new Error(user.message || 'Sesi akun tidak dapat diverifikasi.');
+      currentProfileUserId = user.id;
+      const response = await fetch(SUPABASE_URL + '/rest/v1/profiles?select=id,full_name,email,phone&id=eq.' + encodeURIComponent(user.id), { headers: profileHeaders(token) });
+      const rows = await response.json();
+      if (!response.ok) throw new Error(rows.message || rows.details || 'Gagal memuat profil (' + response.status + ').');
+      const profile = rows && rows[0] ? rows[0] : {};
+      if (byId('profileName')) byId('profileName').value = profile.full_name || user.user_metadata?.full_name || '';
+      if (byId('profilePhone')) byId('profilePhone').value = profile.phone || '';
+      if (byId('profileEmail')) byId('profileEmail').value = profile.email || user.email || '';
+      if (message) message.textContent = profile.phone ? 'Profil berhasil dimuat.' : 'Silakan lengkapi nomor WhatsApp agar dapat menerima pengingat.';
+    } catch (error) {
+      if (message) message.textContent = 'Gagal memuat profil: ' + error.message;
+    }
+  }
+
+  async function saveMemberProfile() {
+    const token = sessionStorage.getItem('dcv_access_token');
+    const button = byId('saveProfileButton');
+    const message = byId('profileMessage');
+    if (!token) { if (message) message.textContent = 'Sesi login tidak ditemukan. Silakan login kembali.'; return; }
+    const fullName = (byId('profileName')?.value || '').trim();
+    if (!fullName) { if (message) message.textContent = 'Nama lengkap wajib diisi.'; byId('profileName')?.focus(); return; }
+    let phone;
+    try { phone = normalizeIndonesianPhone(byId('profilePhone')?.value || ''); }
+    catch (error) { if (message) message.textContent = error.message; byId('profilePhone')?.focus(); return; }
+    if (!currentProfileUserId) { await loadMemberProfile(); }
+    if (!currentProfileUserId) { if (message) message.textContent = 'Profil belum berhasil dimuat. Muat ulang halaman Profil lalu coba lagi.'; return; }
+    if (button) { button.disabled = true; button.textContent = 'Menyimpan...'; }
+    if (message) message.textContent = 'Menyimpan perubahan profil...';
+    try {
+      const response = await fetch(SUPABASE_URL + '/rest/v1/profiles?id=eq.' + encodeURIComponent(currentProfileUserId), {
+        method: 'PATCH',
+        headers: profileHeaders(token, { 'Content-Type': 'application/json', Prefer: 'return=minimal' }),
+        body: JSON.stringify({ full_name: fullName, phone: phone || null, updated_at: new Date().toISOString() })
+      });
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(detail || 'Gagal menyimpan profil (' + response.status + ').');
+      }
+      if (typeof window.setMemberWelcomeName === 'function') window.setMemberWelcomeName(fullName);
+      if (message) message.textContent = 'Profil berhasil disimpan. Nomor WhatsApp: ' + (phone || 'belum diisi') + '.';
+    } catch (error) {
+      if (message) message.textContent = 'Gagal menyimpan profil: ' + error.message;
+    } finally {
+      if (button) { button.disabled = false; button.textContent = 'Simpan Profil'; }
+    }
+  }
+
+  window.loadMemberProfile = loadMemberProfile;
+  byId('saveProfileButton')?.addEventListener('click', saveMemberProfile);
 })();
 </script>
 
