@@ -404,7 +404,7 @@ button, .primary-btn, .secondary-btn { touch-action:manipulation; }
         <div class="feature-image" id="dashboardBannerMedia">Area video / banner utama ESKAYVIE</div>
         <div class="member-shortcuts"><div class="shortcut"><strong>Konten Pembelajaran</strong><span>Akses materi dan panduan bisnis digital.</span></div><div class="shortcut"><strong>Training</strong><span>Pelajari strategi membangun network.</span></div><div class="shortcut"><strong>Data Leads</strong><span>Kelola prospek dan aktivitas follow-up.</span></div></div>
         <div class="card" id="dashboardFollowUpCard" style="margin-top:20px">
-          <div class="page-head"><div><h2 style="margin:0">Pengingat Follow-Up</h2><div class="subtitle">Pantau prospek yang perlu dihubungi hari ini dan berikutnya.</div></div><button class="secondary-btn" type="button" onclick="navigate('leads')">Buka Data Leads</button></div>
+          <div class="page-head"><div><h2 style="margin:0">Pengingat Follow-Up</h2><div class="subtitle">Pantau prospek yang perlu dihubungi hari ini dan berikutnya.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="secondary-btn" type="button" id="enableFollowUpNotifications" onclick="enableFollowUpNotifications()">Aktifkan Notifikasi</button><button class="secondary-btn" type="button" onclick="navigate('leads')">Buka Data Leads</button></div></div>
           <div id="dashFollowAlert" role="status" style="display:none;margin:12px 0;padding:12px 14px;border:1px solid #fecaca;border-left:4px solid #dc2626;border-radius:10px;background:#fff7f7;color:#991b1b;font-size:13px;font-weight:600"></div>
           <div class="cards" style="margin:14px 0">
             <div class="card"><div class="metric-label">Terlambat</div><div class="metric-value" id="dashFollowOverdue">—</div></div>
@@ -2304,6 +2304,31 @@ async function loadAffiliateCenter() {
     });
   }
 
+  async function enableFollowUpNotifications() {
+    if (!('Notification' in window)) {
+      showToast('Browser ini belum mendukung notifikasi.');
+      return;
+    }
+    if (!window.isSecureContext) {
+      showToast('Notifikasi memerlukan koneksi HTTPS.');
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      const button = document.getElementById('enableFollowUpNotifications');
+      if (permission === 'granted') {
+        if (button) { button.textContent = 'Notifikasi Aktif'; button.disabled = true; }
+        showToast('Notifikasi follow-up berhasil diaktifkan.');
+        if (typeof window.loadDashboardFollowUps === 'function') window.loadDashboardFollowUps();
+      } else {
+        showToast('Izin notifikasi belum diberikan. Aktifkan melalui pengaturan browser.');
+      }
+    } catch (error) {
+      console.warn('Izin notifikasi tidak dapat diminta:', error);
+      showToast('Notifikasi belum dapat diaktifkan pada browser ini.');
+    }
+  }
+
   async function loadDashboardFollowUps() {
     const ids = ['dashFollowOverdue','dashFollowToday','dashFollowTomorrow','dashFollowOverdueList','dashFollowTodayList','dashFollowTomorrowList','trackerTotal','trackerNew','trackerInterested','trackerClosing','trackerConversion','trackerContacted','trackerFollowUp','trackerNotInterested','trackerActivities30','trackerWhatsApp30','trackerProcessed','trackerProcessedRate','trackerPipelineSummary','trackerMonthlyChart','trackerMonthlyNote','monthlyPerformancePeriod','monthlyNewLeads','monthlyActivities','monthlyWhatsApp','monthlyClosing','monthlyPerformanceNote'];
     const nodes = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
@@ -2447,6 +2472,34 @@ async function loadAffiliateCenter() {
         } else {
           alertBox.style.display = 'none';
           alertBox.textContent = '';
+        }
+      }
+      if ('Notification' in window) {
+        const notificationButton = document.getElementById('enableFollowUpNotifications');
+        if (notificationButton && Notification.permission === 'granted') {
+          notificationButton.textContent = 'Notifikasi Aktif';
+          notificationButton.disabled = true;
+        }
+        if (Notification.permission === 'granted' && (overdue.length || today.length)) {
+          const reminderKey = 'dcv_followup_notice_' + new Date().toLocaleDateString('en-CA') + '_' +
+            overdue.map(item => item.id).sort().join(',') + '_' + today.map(item => item.id).sort().join(',');
+          if (sessionStorage.getItem('dcv_last_followup_notice') !== reminderKey) {
+            const title = overdue.length ? 'Pengingat Follow-Up Terlambat' : 'Pengingat Follow-Up Hari Ini';
+            const body = (overdue.length ? overdue.length + ' prospek terlambat' : '') +
+              (overdue.length && today.length ? ' · ' : '') +
+              (today.length ? today.length + ' prospek perlu dihubungi hari ini' : '');
+            const notice = new Notification(title, {
+              body,
+              tag: 'dcv-followup-reminder',
+              icon: '/favicon.ico'
+            });
+            notice.onclick = () => {
+              window.focus();
+              notice.close();
+              navigate('leads');
+            };
+            sessionStorage.setItem('dcv_last_followup_notice', reminderKey);
+          }
         }
       }
       overdue.sort((a,b) => new Date(a.follow_up_at) - new Date(b.follow_up_at));
