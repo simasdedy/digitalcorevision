@@ -1,0 +1,32 @@
+
+name: Test WhatsApp OneSender
+
+on:
+  workflow_dispatch:
+
+jobs:
+  send-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kirim pesan percobaan
+        env:
+          API_URL: ${{ secrets.ONESENDER_API_URL }}
+          API_KEY: ${{ secrets.ONESENDER_API_KEY }}
+          TARGET: ${{ secrets.WA_TARGET }}
+        run: |
+          set -e
+
+          if [ -z "$API_URL" ] || [ -z "$API_KEY" ] || [ -z "$TARGET" ]; then
+            echo "ERROR: GitHub Secrets belum lengkap."
+            exit 1
+          fi
+
+          RESPONSE=$(curl -sS -w "\nHTTP_STATUS:%{http_code}" \
+            -X POST "$API_URL" \
+            -H "Authorization: Bearer $API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$(jq -n --arg to "$TARGET" \
+              '{recipient_type:"individual",to:$to,type:"text",text:{body:"Halo! Ini pesan percobaan integrasi WhatsApp DIGITALCOREVISION melalui GitHub Actions."}}')")
+
+          echo "$RESPONSE"
