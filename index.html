@@ -340,15 +340,15 @@ button, .primary-btn, .secondary-btn { touch-action:manipulation; }
 <section class="login-screen" id="loginScreen">
   <div class="login-card">
     <div class="brand" style="margin-bottom:24px"><div class="brand-mark">DC</div><span>DIGITALCOREVISION <span style="color:#0d9488">2.0</span></span></div>
-    <div class="login-tabs"><button type="button" class="active" id="showAdminTab">Super Admin</button><button type="button" id="showMemberTab">Member</button></div>
-    <form class="auth-form" id="adminLoginForm">
+    <div class="login-tabs" hidden><button type="button" class="active" id="showAdminTab">Super Admin</button><button type="button" id="showMemberTab">Member</button></div>
+    <form class="auth-form" id="adminLoginForm" hidden>
     <h1>Login Super Admin</h1>
     <p>Masuk menggunakan akun Super Admin yang sudah terdaftar di Supabase.</p>
     <div class="field"><label for="adminLoginEmail">Email</label><input id="adminLoginEmail" type="email" autocomplete="username" placeholder="Email Super Admin" required></div>
     <div class="field"><label for="adminLoginPassword">Password</label><div class="password-input-wrap"><input id="adminLoginPassword" type="password" autocomplete="current-password" placeholder="Password" required><button class="password-toggle" type="button" aria-label="Tampilkan password" aria-pressed="false" onclick="toggleLoginPassword('adminLoginPassword',this)">👁</button></div></div>
     <button class="primary-btn" id="adminLoginButton" type="submit" style="width:100%;padding:13px">Masuk ke Admin Panel</button>
     </form>
-    <form class="auth-form" id="memberAuthForm" hidden>
+    <form class="auth-form" id="memberAuthForm">
       <h1 id="memberAuthTitle">Login Member</h1>
       <p id="memberAuthDescription">Masuk ke akun DIGITALCOREVISION Anda.</p>
       <div id="memberNameField" class="field" hidden><label for="memberFullName">Nama lengkap</label><input id="memberFullName" type="text" autocomplete="name" placeholder="Nama lengkap"></div>
@@ -371,7 +371,7 @@ button, .primary-btn, .secondary-btn { touch-action:manipulation; }
       <button type="button" id="toggleMemberSignup" class="secondary-btn" style="width:100%;margin-top:9px">Belum punya akun? Daftar Member</button>
     </form>
     <div class="login-error show" id="loginError" role="status">Memuat halaman login...</div>
-    <div class="login-note">Gunakan akses Super Admin untuk pengelolaan platform atau akses Member untuk belajar dan menggunakan layanan. Jangan bagikan password Anda.</div>
+    <div class="login-note">Gunakan email dan password akun DIGITALCOREVISION Anda. Sistem akan mengarahkan Anda ke Dashboard sesuai hak akses akun. Jangan bagikan password Anda.</div>
   </div>
 </section>
 <div class="app-root">
@@ -1485,8 +1485,8 @@ enterMemberApp(
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.msg || result.message || result.error_description || 'Login gagal (' + response.status + ').');
-        enterMemberApp(result.access_token, email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
-        recordMemberLogin(result.access_token, result.user && result.user.id);
+        const isSuperAdmin = await verifyToken(result.access_token, result.user && result.user.email, result.user && result.user.user_metadata && result.user.user_metadata.full_name);
+        if (!isSuperAdmin) recordMemberLogin(result.access_token, result.user && result.user.id);
       }
     } catch (error) {
       showLoginError('Tidak bisa memproses akun: ' + (error.message || 'periksa koneksi Supabase.'));
@@ -2711,7 +2711,10 @@ async function loadAffiliateCenter() {
     });
     const result = await response.text();
     if (!response.ok) throw new Error('Verifikasi Super Admin gagal (' + response.status + '): ' + result);
-    if (result !== 'true') throw new Error('Akun ini belum terdaftar sebagai Super Admin.');
+    if (result.trim() !== 'true') {
+      enterMemberApp(token, email, fullName);
+      return false;
+    }
     sessionStorage.setItem('dcv_access_token', token);
     sessionStorage.setItem('dcv_admin_email', email || 'Super Admin');
     document.getElementById('signedInEmail').textContent = email || 'Super Admin';
@@ -2724,6 +2727,7 @@ async function loadAffiliateCenter() {
     document.getElementById('systemSettingsCard').hidden = false;
     // Setelah Super Admin berhasil diverifikasi, buka Dashboard dan muat statistik serta pengingat.
     navigate('dashboard');
+    return true;
   }
 
   loginForm.addEventListener('submit', async function (event) {
