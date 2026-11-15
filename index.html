@@ -3580,7 +3580,8 @@ async function loadAffiliateCenter() {
 
 <script>
 (function(){
-  const base=SUPABASE_URL, key=SUPABASE_PUBLISHABLE_KEY;
+  const base='https://slygdkibtwgepjxsndjo.supabase.co';
+  const key='sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
   const token=()=>sessionStorage.getItem('dcv_access_token');
   const headers=(extra={})=>({apikey:key,Authorization:'Bearer '+(token()||''),...extra});
   const byId=id=>document.getElementById(id);
