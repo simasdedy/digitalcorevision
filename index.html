@@ -743,6 +743,7 @@ function navigate(page) {
   }
   document.querySelectorAll('.page').forEach(el => el.classList.toggle('active', el.id === page));
   document.querySelectorAll('.nav-btn').forEach(el => el.classList.toggle('active', el.dataset.page === page));
+  if (page === 'admin' && typeof loadPremiumPackageSettings === 'function') loadPremiumPackageSettings();
   if (page === 'admin' && typeof window.loadAdminDashboard === 'function') window.loadAdminDashboard();
    if (page === 'admin' && typeof window.loadAdminAffiliate === 'function') window.loadAdminAffiliate();
   if (page === 'admin' && typeof window.loadAdminMembers === 'function') window.loadAdminMembers();
