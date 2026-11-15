@@ -3318,106 +3318,7 @@ async function loadAffiliateCenter() {
       showToast('Izinkan pop-up untuk membuka sertifikat.');
       return;
     }
-    popup.document.write('<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Menerbitkan Sertifikat</title></head><body style="font-family:Arial;padding:40px;color:#12385b">Menghubungi database sertifikat DIGITALCOREVISION...<script>
-(function(){
-  const base=SUPABASE_URL, key=SUPABASE_PUBLISHABLE_KEY;
-  const token=()=>sessionStorage.getItem('dcv_access_token');
-  const headers=(extra={})=>({apikey:key,Authorization:'Bearer '+(token()||''),...extra});
-  const byId=id=>document.getElementById(id);
-  let prices={monthly:299000,yearly:2990000};
-  const money=n=>'Rp '+Number(n||0).toLocaleString('id-ID');
-  async function jsonFetch(url,options={}){const res=await fetch(url,options);const raw=await res.text();let data;try{data=raw?JSON.parse(raw):null;}catch(_){data=raw;}if(!res.ok)throw new Error((data&& (data.message||data.error||data.details))||'Permintaan gagal ('+res.status+').');return data;}
-  async function loadPremiumBankSettings(){
-    if(!token())return;
-    try{
-      const [bankRows,priceRows]=await Promise.all([
-        jsonFetch(base+'/rest/v1/premium_payment_settings?id=eq.1&select=bank_name,account_name,account_number,instructions',{headers:headers()}),
-        jsonFetch(base+'/rest/v1/premium_package_settings?id=eq.1&select=monthly_price,yearly_price',{headers:headers()})
-      ]);
-      const b=bankRows&&bankRows[0];
-      if(b){
-        if(byId('premiumBankName'))byId('premiumBankName').value=b.bank_name||'';
-        if(byId('premiumBankAccountName'))byId('premiumBankAccountName').value=b.account_name||'';
-        if(byId('premiumBankAccountNumber'))byId('premiumBankAccountNumber').value=b.account_number||'';
-        if(byId('premiumBankInstructions'))byId('premiumBankInstructions').value=b.instructions||'';
-        byId('premiumBankDetails').innerHTML='<strong>'+escapeHtml(b.bank_name||'')+'</strong><br>Nomor rekening: <strong>'+escapeHtml(b.account_number||'')+'</strong><br>Atas nama: '+escapeHtml(b.account_name||'')+(b.instructions?'<br><br>'+escapeHtml(b.instructions).replace(/\n/g,'<br>'):'');
-      }else byId('premiumBankDetails').textContent='Informasi rekening belum diatur. Silakan hubungi Super Admin.';
-      if(priceRows&&priceRows[0])prices={monthly:Number(priceRows[0].monthly_price),yearly:Number(priceRows[0].yearly_price)};
-      renderPremiumPrice();
-    }catch(e){byId('premiumBankDetails').textContent='Informasi pembayaran belum dapat dimuat: '+e.message;}
-  }
-  function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-  function renderPremiumPrice(){const type=byId('memberPremiumPackage')?.value||'monthly';if(byId('memberPremiumPrice'))byId('memberPremiumPrice').textContent=money(prices[type]);}
-  async function submitPayment(e){
-    e.preventDefault();const btn=byId('submitPremiumPayment');if(!token()||!btn)return;
-    if(window.dcvMembershipStatus==='premium'){byId('premiumPaymentStatus').textContent='Premium Anda masih aktif. Tidak perlu mengirim konfirmasi pembayaran.';return;}
-    btn.disabled=true;btn.textContent='Mengirim konfirmasi...';
-    try{
-      const user=await jsonFetch(base+'/auth/v1/user',{headers:headers()});
-      const type=byId('memberPremiumPackage').value;
-      const payload={user_id:user.id,package_type:type,amount:prices[type],sender_name:byId('paymentSenderName').value.trim(),transfer_date:byId('paymentTransferDate').value,payment_reference:byId('paymentReference').value.trim()||null,member_note:byId('paymentMemberNote').value.trim()||null,status:'pending'};
-      await jsonFetch(base+'/rest/v1/premium_payment_confirmations',{method:'POST',headers:headers({'Content-Type':'application/json',Prefer:'return=representation'}),body:JSON.stringify(payload)});
-      byId('premiumPaymentStatus').textContent='Konfirmasi pembayaran berhasil dikirim. Super Admin akan memeriksa pembayaran Anda.';
-      byId('premiumPaymentConfirmationForm').reset();await loadMyPaymentConfirmation();
-    }catch(err){byId('premiumPaymentStatus').textContent='Gagal mengirim konfirmasi: '+err.message;}
-    finally{btn.disabled=false;btn.textContent='KIRIM KONFIRMASI PEMBAYARAN';}
-  }
-  async function loadMyPaymentConfirmation(){
-    if(!token())return;
-    try{
-      const rows=await jsonFetch(base+'/rest/v1/premium_payment_confirmations?select=package_type,amount,status,created_at,admin_note&order=created_at.desc&limit=1',{headers:headers()});
-      if(rows&&rows[0]){
-        const p=rows[0], labels={pending:'Menunggu verifikasi pembayaran',verified:'Pembayaran sudah diverifikasi · menunggu aktivasi Premium',rejected:'Konfirmasi pembayaran ditolak'};
-        byId('premiumPaymentStatus').textContent='Konfirmasi terakhir: '+(labels[p.status]||p.status)+' · '+(p.package_type==='yearly'?'Tahunan':'Bulanan')+' · '+money(p.amount)+' · '+new Date(p.created_at).toLocaleString('id-ID')+(p.admin_note?' · Catatan: '+p.admin_note:'');
-      }
-    }catch(e){byId('premiumPaymentStatus').textContent='Status pembayaran belum tersedia: '+e.message;}
-  }
-  async function saveBankSettings(e){
-    e.preventDefault();const msg=byId('premiumBankSettingsMessage');msg.textContent='Menyimpan...';
-    try{const payload={id:1,bank_name:byId('premiumBankName').value.trim(),account_name:byId('premiumBankAccountName').value.trim(),account_number:byId('premiumBankAccountNumber').value.trim(),instructions:byId('premiumBankInstructions').value.trim(),updated_at:new Date().toISOString()};
-      await jsonFetch(base+'/rest/v1/premium_payment_settings?on_conflict=id',{method:'POST',headers:headers({'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(payload)});
-      msg.textContent='Informasi rekening berhasil disimpan.';await loadPremiumBankSettings();
-    }catch(e){msg.textContent='Gagal menyimpan: '+e.message;}
-  }
-  async function loadAdminPayments(){
-    const msg=byId('premiumPaymentAdminMessage'),body=document.querySelector('#premiumPaymentAdminTable tbody');if(!msg||!body||!token())return;
-    msg.textContent='Memuat konfirmasi...';body.replaceChildren();
-    try{
-      const [rows,profiles]=await Promise.all([
-        jsonFetch(base+'/rest/v1/premium_payment_confirmations?select=id,user_id,package_type,amount,sender_name,transfer_date,payment_reference,status,created_at,member_note,admin_note&order=created_at.desc',{headers:headers()}),
-        jsonFetch(base+'/rest/v1/profiles?select=id,full_name,email',{headers:headers()})
-      ]);
-      const pm=new Map(profiles.map(p=>[p.id,p]));
-      rows.forEach(p=>{
-        const profile=pm.get(p.user_id)||{},tr=document.createElement('tr');
-        const vals=[(profile.full_name||'Member')+' · '+(profile.email||''),p.package_type==='yearly'?'Tahunan':'Bulanan',money(p.amount),p.sender_name,p.transfer_date,p.payment_reference||'—',({pending:'Menunggu',verified:'Terverifikasi',rejected:'Ditolak'}[p.status]||p.status)];
-        vals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
-        const td=document.createElement('td');
-        if(p.status==='pending'){
-          [['Verifikasi','verified'],['Tolak','rejected']].forEach(([label,status])=>{const b=document.createElement('button');b.type='button';b.className='secondary-btn';b.textContent=label;b.addEventListener('click',()=>updatePaymentStatus(p.id,status));td.appendChild(b);});
-        }else td.textContent=p.admin_note||'—';
-        tr.appendChild(td);body.appendChild(tr);
-      });
-      msg.textContent=rows.length?'Menampilkan '+rows.length+' konfirmasi pembayaran.':'Belum ada konfirmasi pembayaran.';
-    }catch(e){msg.textContent='Gagal memuat konfirmasi: '+e.message;}
-  }
-  async function updatePaymentStatus(id,status){
-    const note=prompt(status==='verified'?'Catatan verifikasi (opsional):':'Alasan penolakan (opsional):')||null;
-    try{await jsonFetch(base+'/rest/v1/premium_payment_confirmations?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:headers({'Content-Type':'application/json',Prefer:'return=minimal'}),body:JSON.stringify({status,admin_note:note,reviewed_at:new Date().toISOString()})});await loadAdminPayments();}
-    catch(e){showToast('Gagal memperbarui status pembayaran: '+e.message);}
-  }
-  byId('memberPremiumPackage')?.addEventListener('change',renderPremiumPrice);
-  byId('premiumPaymentConfirmationForm')?.addEventListener('submit',submitPayment);
-  byId('premiumBankSettingsForm')?.addEventListener('submit',saveBankSettings);
-  byId('refreshPremiumPayments')?.addEventListener('click',loadAdminPayments);
-  const oldNavigate=window.navigate;
-  document.querySelectorAll('.nav-btn[data-page="premium"]').forEach(b=>b.addEventListener('click',()=>{setTimeout(()=>{loadPremiumBankSettings();loadMyPaymentConfirmation();},0);}));
-  document.querySelectorAll('.nav-btn[data-page="admin"]').forEach(b=>b.addEventListener('click',()=>setTimeout(loadAdminPayments,0)));
-  window.loadPremiumPaymentAdmin=loadAdminPayments;
-  document.addEventListener('DOMContentLoaded',()=>{loadPremiumBankSettings();loadMyPaymentConfirmation();loadAdminPayments();});
-})();
-</script>
-</body></html>');
+    popup.document.write('<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Menerbitkan Sertifikat</title></head><body style="font-family:Arial;padding:40px;color:#12385b">Menghubungi database sertifikat DIGITALCOREVISION...</body></html>');
     try {
       const response = await fetch(BASE + '/rest/v1/rpc/issue_training_certificate', {
         method:'POST',
@@ -3677,5 +3578,104 @@ async function loadAffiliateCenter() {
 })();
 </script>
 
+<script>
+(function(){
+  const base=SUPABASE_URL, key=SUPABASE_PUBLISHABLE_KEY;
+  const token=()=>sessionStorage.getItem('dcv_access_token');
+  const headers=(extra={})=>({apikey:key,Authorization:'Bearer '+(token()||''),...extra});
+  const byId=id=>document.getElementById(id);
+  let prices={monthly:299000,yearly:2990000};
+  const money=n=>'Rp '+Number(n||0).toLocaleString('id-ID');
+  async function jsonFetch(url,options={}){const res=await fetch(url,options);const raw=await res.text();let data;try{data=raw?JSON.parse(raw):null;}catch(_){data=raw;}if(!res.ok)throw new Error((data&& (data.message||data.error||data.details))||'Permintaan gagal ('+res.status+').');return data;}
+  async function loadPremiumBankSettings(){
+    if(!token())return;
+    try{
+      const [bankRows,priceRows]=await Promise.all([
+        jsonFetch(base+'/rest/v1/premium_payment_settings?id=eq.1&select=bank_name,account_name,account_number,instructions',{headers:headers()}),
+        jsonFetch(base+'/rest/v1/premium_package_settings?id=eq.1&select=monthly_price,yearly_price',{headers:headers()})
+      ]);
+      const b=bankRows&&bankRows[0];
+      if(b){
+        if(byId('premiumBankName'))byId('premiumBankName').value=b.bank_name||'';
+        if(byId('premiumBankAccountName'))byId('premiumBankAccountName').value=b.account_name||'';
+        if(byId('premiumBankAccountNumber'))byId('premiumBankAccountNumber').value=b.account_number||'';
+        if(byId('premiumBankInstructions'))byId('premiumBankInstructions').value=b.instructions||'';
+        byId('premiumBankDetails').innerHTML='<strong>'+escapeHtml(b.bank_name||'')+'</strong><br>Nomor rekening: <strong>'+escapeHtml(b.account_number||'')+'</strong><br>Atas nama: '+escapeHtml(b.account_name||'')+(b.instructions?'<br><br>'+escapeHtml(b.instructions).replace(/\n/g,'<br>'):'');
+      }else byId('premiumBankDetails').textContent='Informasi rekening belum diatur. Silakan hubungi Super Admin.';
+      if(priceRows&&priceRows[0])prices={monthly:Number(priceRows[0].monthly_price),yearly:Number(priceRows[0].yearly_price)};
+      renderPremiumPrice();
+    }catch(e){byId('premiumBankDetails').textContent='Informasi pembayaran belum dapat dimuat: '+e.message;}
+  }
+  function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+  function renderPremiumPrice(){const type=byId('memberPremiumPackage')?.value||'monthly';if(byId('memberPremiumPrice'))byId('memberPremiumPrice').textContent=money(prices[type]);}
+  async function submitPayment(e){
+    e.preventDefault();const btn=byId('submitPremiumPayment');if(!token()||!btn)return;
+    if(window.dcvMembershipStatus==='premium'){byId('premiumPaymentStatus').textContent='Premium Anda masih aktif. Tidak perlu mengirim konfirmasi pembayaran.';return;}
+    btn.disabled=true;btn.textContent='Mengirim konfirmasi...';
+    try{
+      const user=await jsonFetch(base+'/auth/v1/user',{headers:headers()});
+      const type=byId('memberPremiumPackage').value;
+      const payload={user_id:user.id,package_type:type,amount:prices[type],sender_name:byId('paymentSenderName').value.trim(),transfer_date:byId('paymentTransferDate').value,payment_reference:byId('paymentReference').value.trim()||null,member_note:byId('paymentMemberNote').value.trim()||null,status:'pending'};
+      await jsonFetch(base+'/rest/v1/premium_payment_confirmations',{method:'POST',headers:headers({'Content-Type':'application/json',Prefer:'return=representation'}),body:JSON.stringify(payload)});
+      byId('premiumPaymentStatus').textContent='Konfirmasi pembayaran berhasil dikirim. Super Admin akan memeriksa pembayaran Anda.';
+      byId('premiumPaymentConfirmationForm').reset();await loadMyPaymentConfirmation();
+    }catch(err){byId('premiumPaymentStatus').textContent='Gagal mengirim konfirmasi: '+err.message;}
+    finally{btn.disabled=false;btn.textContent='KIRIM KONFIRMASI PEMBAYARAN';}
+  }
+  async function loadMyPaymentConfirmation(){
+    if(!token())return;
+    try{
+      const rows=await jsonFetch(base+'/rest/v1/premium_payment_confirmations?select=package_type,amount,status,created_at,admin_note&order=created_at.desc&limit=1',{headers:headers()});
+      if(rows&&rows[0]){
+        const p=rows[0], labels={pending:'Menunggu verifikasi pembayaran',verified:'Pembayaran sudah diverifikasi · menunggu aktivasi Premium',rejected:'Konfirmasi pembayaran ditolak'};
+        byId('premiumPaymentStatus').textContent='Konfirmasi terakhir: '+(labels[p.status]||p.status)+' · '+(p.package_type==='yearly'?'Tahunan':'Bulanan')+' · '+money(p.amount)+' · '+new Date(p.created_at).toLocaleString('id-ID')+(p.admin_note?' · Catatan: '+p.admin_note:'');
+      }
+    }catch(e){byId('premiumPaymentStatus').textContent='Status pembayaran belum tersedia: '+e.message;}
+  }
+  async function saveBankSettings(e){
+    e.preventDefault();const msg=byId('premiumBankSettingsMessage');msg.textContent='Menyimpan...';
+    try{const payload={id:1,bank_name:byId('premiumBankName').value.trim(),account_name:byId('premiumBankAccountName').value.trim(),account_number:byId('premiumBankAccountNumber').value.trim(),instructions:byId('premiumBankInstructions').value.trim(),updated_at:new Date().toISOString()};
+      await jsonFetch(base+'/rest/v1/premium_payment_settings?on_conflict=id',{method:'POST',headers:headers({'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'}),body:JSON.stringify(payload)});
+      msg.textContent='Informasi rekening berhasil disimpan.';await loadPremiumBankSettings();
+    }catch(e){msg.textContent='Gagal menyimpan: '+e.message;}
+  }
+  async function loadAdminPayments(){
+    const msg=byId('premiumPaymentAdminMessage'),body=document.querySelector('#premiumPaymentAdminTable tbody');if(!msg||!body||!token())return;
+    msg.textContent='Memuat konfirmasi...';body.replaceChildren();
+    try{
+      const [rows,profiles]=await Promise.all([
+        jsonFetch(base+'/rest/v1/premium_payment_confirmations?select=id,user_id,package_type,amount,sender_name,transfer_date,payment_reference,status,created_at,member_note,admin_note&order=created_at.desc',{headers:headers()}),
+        jsonFetch(base+'/rest/v1/profiles?select=id,full_name,email',{headers:headers()})
+      ]);
+      const pm=new Map(profiles.map(p=>[p.id,p]));
+      rows.forEach(p=>{
+        const profile=pm.get(p.user_id)||{},tr=document.createElement('tr');
+        const vals=[(profile.full_name||'Member')+' · '+(profile.email||''),p.package_type==='yearly'?'Tahunan':'Bulanan',money(p.amount),p.sender_name,p.transfer_date,p.payment_reference||'—',({pending:'Menunggu',verified:'Terverifikasi',rejected:'Ditolak'}[p.status]||p.status)];
+        vals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
+        const td=document.createElement('td');
+        if(p.status==='pending'){
+          [['Verifikasi','verified'],['Tolak','rejected']].forEach(([label,status])=>{const b=document.createElement('button');b.type='button';b.className='secondary-btn';b.textContent=label;b.addEventListener('click',()=>updatePaymentStatus(p.id,status));td.appendChild(b);});
+        }else td.textContent=p.admin_note||'—';
+        tr.appendChild(td);body.appendChild(tr);
+      });
+      msg.textContent=rows.length?'Menampilkan '+rows.length+' konfirmasi pembayaran.':'Belum ada konfirmasi pembayaran.';
+    }catch(e){msg.textContent='Gagal memuat konfirmasi: '+e.message;}
+  }
+  async function updatePaymentStatus(id,status){
+    const note=prompt(status==='verified'?'Catatan verifikasi (opsional):':'Alasan penolakan (opsional):')||null;
+    try{await jsonFetch(base+'/rest/v1/premium_payment_confirmations?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:headers({'Content-Type':'application/json',Prefer:'return=minimal'}),body:JSON.stringify({status,admin_note:note,reviewed_at:new Date().toISOString()})});await loadAdminPayments();}
+    catch(e){showToast('Gagal memperbarui status pembayaran: '+e.message);}
+  }
+  byId('memberPremiumPackage')?.addEventListener('change',renderPremiumPrice);
+  byId('premiumPaymentConfirmationForm')?.addEventListener('submit',submitPayment);
+  byId('premiumBankSettingsForm')?.addEventListener('submit',saveBankSettings);
+  byId('refreshPremiumPayments')?.addEventListener('click',loadAdminPayments);
+  const oldNavigate=window.navigate;
+  document.querySelectorAll('.nav-btn[data-page="premium"]').forEach(b=>b.addEventListener('click',()=>{setTimeout(()=>{loadPremiumBankSettings();loadMyPaymentConfirmation();},0);}));
+  document.querySelectorAll('.nav-btn[data-page="admin"]').forEach(b=>b.addEventListener('click',()=>setTimeout(loadAdminPayments,0)));
+  window.loadPremiumPaymentAdmin=loadAdminPayments;
+  document.addEventListener('DOMContentLoaded',()=>{loadPremiumBankSettings();loadMyPaymentConfirmation();loadAdminPayments();});
+})();
+</script>
 </body>
 </html>
