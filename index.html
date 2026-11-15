@@ -2762,7 +2762,7 @@ async function loadAffiliateCenter() {
     loginForm.reset();
   });
 
-  loginError.textContent = 'Form login siap. Silakan masuk dengan akun Super Admin.';
+  loginError.textContent = 'Silakan login menggunakan email dan password akun Anda.';
   const savedToken = sessionStorage.getItem('dcv_access_token');
   if (savedToken && sessionStorage.getItem('dcv_member_email')) {
     enterMemberApp(savedToken, sessionStorage.getItem('dcv_member_email'));
