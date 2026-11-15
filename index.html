@@ -180,6 +180,12 @@ body.admin-authenticated .member-nav [data-page="premium"] { display:none; }
 .admin-metric strong { display:block; font-size:28px; font-weight:850; } .admin-metric span { color:#6b7280; font-size:12px; }
 .admin-panel-card { background:#fff; border:1px solid #e5e7eb; border-radius:18px; padding:24px; margin-bottom:20px; box-shadow:0 4px 16px #11182708; }
 .admin-kpis { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+#adminMembershipMetrics { grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+#adminMembershipMetrics .admin-kpi { min-width:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:20px 12px; }
+#adminMembershipMetrics .admin-kpi strong { display:block; margin:0; font-size:26px; line-height:1.15; font-weight:800; color:#111827; }
+#adminMembershipMetrics .admin-kpi span { display:block; margin:0; font-size:12px; line-height:1.4; color:#64748b; }
+@media(max-width:900px) { #adminMembershipMetrics { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:420px) { #adminMembershipMetrics .admin-kpi { padding:16px 8px; } #adminMembershipMetrics .admin-kpi strong { font-size:23px; } #adminMembershipMetrics .admin-kpi span { font-size:11px; } }
 
 .admin-growth-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; }
 .admin-growth-chart { display:flex; align-items:flex-end; gap:10px; height:190px; padding:20px 4px 26px; border-bottom:1px solid #e5e7eb; }
