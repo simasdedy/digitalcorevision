@@ -2988,13 +2988,22 @@ async function loadAffiliateCenter() {
     if (!categories.length) { el.textContent = 'Belum ada kategori. Tambahkan kategori pertama melalui formulir di atas.'; return; }
     el.innerHTML = categories.map(c => '<div class="plan"><div><strong>' + esc(c.name) + '</strong><small>' + esc(c.description || 'Tanpa deskripsi') + '</small></div><button class="secondary-btn" type="button" data-delete-category="' + esc(c.id) + '">Hapus</button></div>').join('');
   }
-  function renderAdminMaterials() {
+  async function renderAdminMaterials() {
     const el = document.getElementById('contentAdminList'); if (!el) return;
     if (!materials.length) { el.textContent = 'Belum ada materi. Tambahkan materi melalui formulir di atas.'; return; }
-    el.innerHTML = materials.map(m => {
+    el.textContent = 'Menyiapkan tautan materi...';
+    const rows = await Promise.all(materials.map(async m => {
       const cat = categories.find(c => c.id === m.category_id);
-      return '<div class="plan"><div><strong>' + esc(m.title) + '</strong><small>' + esc(cat ? cat.name : 'Tanpa kategori') + ' · ' + esc(m.content_type.toUpperCase()) + ' · ' + (m.status === 'published' ? 'Dipublikasikan' : 'Draft') + '</small><small>' + esc(m.description || '') + '</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><a class="secondary-btn" href="' + esc(m.content_url) + '" target="_blank" rel="noopener noreferrer">Buka</a><button class="secondary-btn" type="button" data-edit-material="' + esc(m.id) + '">Edit</button><button class="secondary-btn" type="button" data-toggle-material="' + esc(m.id) + '" data-status="' + esc(m.status) + '">' + (m.status === 'published' ? 'Jadikan Draft' : 'Publikasikan') + '</button><button class="secondary-btn" type="button" data-delete-material="' + esc(m.id) + '">Hapus</button></div></div>';
-    }).join('');
+      let href = m.content_url || '';
+      if (['pdf','document'].includes(m.content_type) && href.startsWith('files/')) {
+        try { href = await getTrainingFileUrl(href); } catch (error) { console.warn('Tautan materi admin gagal dibuat:', error); href = ''; }
+      }
+      const openButton = href
+        ? '<a class="secondary-btn" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">Buka</a>'
+        : '<button class="secondary-btn" type="button" disabled title="Tautan file tidak dapat dibuat">Buka</button>';
+      return '<div class="plan"><div><strong>' + esc(m.title) + '</strong><small>' + esc(cat ? cat.name : 'Tanpa kategori') + ' · ' + esc(m.content_type.toUpperCase()) + ' · ' + (m.status === 'published' ? 'Dipublikasikan' : 'Draft') + '</small><small>' + esc(m.description || '') + '</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">' + openButton + '<button class="secondary-btn" type="button" data-edit-material="' + esc(m.id) + '">Edit</button><button class="secondary-btn" type="button" data-toggle-material="' + esc(m.id) + '" data-status="' + esc(m.status) + '">' + (m.status === 'published' ? 'Jadikan Draft' : 'Publikasikan') + '</button><button class="secondary-btn" type="button" data-delete-material="' + esc(m.id) + '">Hapus</button></div></div>';
+    }));
+    if (document.getElementById('contentAdminList') === el) el.innerHTML = rows.join('');
   }
   async function loadTrainingProgressAdmin() {
     const messageEl = document.getElementById('trainingProgressAdminMessage');
