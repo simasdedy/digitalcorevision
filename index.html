@@ -3326,66 +3326,6 @@ async function loadAffiliateCenter() {
       return;
     }
     popup.document.write('<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Menerbitkan Sertifikat</title></head><body style="font-family:Arial;padding:40px;color:#12385b">Menghubungi database sertifikat DIGITALCOREVISION...
-<script>
-(function () {
-  const BASE='https://slygdkibtwgepjxsndjo.supabase.co';
-  const KEY='sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
-  const token=()=>sessionStorage.getItem('dcv_access_token')||'';
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const userId=()=>{try{const p=token().split('.')[1].replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(atob(p)).sub||'';}catch(_){return '';}};
-  async function api(path,options={}){if(!token())throw new Error('Sesi login tidak ditemukan. Silakan login kembali.');const response=await fetch(BASE+'/rest/v1/'+path,{...options,headers:{apikey:KEY,Authorization:'Bearer '+token(),...(options.headers||{})}});const raw=await response.text();let data=null;try{data=raw?JSON.parse(raw):null;}catch(_){data=raw;}if(!response.ok)throw new Error((data&&(data.message||data.details||data.hint))||'Permintaan gagal ('+response.status+').');return data;}
-  const dateLabel=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'});};
-  const dateInput=v=>{if(!v)return '';const d=new Date(v);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);};
-  const msg=(id,t)=>{const e=document.getElementById(id);if(e)e.textContent=t;};
-  let adminRows=[];
-  async function loadAdminWebinars(){
-    const list=document.getElementById('webinarAdminList');if(!list)return;msg('webinarAdminMessage','Memuat data webinar...');
-    try{
-      adminRows=await api('webinars?select=id,title,description,starts_at,ends_at,meeting_url,status,created_at&order=starts_at.desc')||[];
-      const regs=await api('webinar_registrations?select=id,webinar_id,user_id,status,registered_at,attended_at&order=registered_at.desc')||[];
-      const ids=[...new Set(regs.map(r=>r.user_id))];let profiles=[];
-      if(ids.length)profiles=await api('profiles?select=id,full_name,email&id=in.('+ids.join(',')+')')||[];
-      const pm=new Map(profiles.map(p=>[p.id,p]));
-      msg('webinarAdminMessage',adminRows.length+' webinar · '+regs.length+' pendaftaran tercatat.');
-      list.innerHTML=adminRows.length?adminRows.map(w=>{
-        const wr=regs.filter(r=>r.webinar_id===w.id);
-        const people=wr.map(r=>{const p=pm.get(r.user_id)||{};const status=({registered:'Terdaftar',attended:'Hadir',cancelled:'Batal',no_show:'Tidak hadir'}[r.status]||r.status);return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e5e7eb"><div><strong>'+esc(p.full_name||'Member')+'</strong><small style="display:block;color:#64748b">'+esc(p.email||'')+' · '+esc(dateLabel(r.registered_at))+'</small></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="status '+(r.status==='attended'?'':'pending')+'">'+esc(status)+'</span>'+(r.status==='registered'?'<button class="secondary-btn" type="button" data-webinar-attend="'+esc(r.id)+'">Tandai Hadir</button>':'')+'</div></div>';}).join('');
-        return '<article class="card" style="margin:12px 0;text-align:left"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong>'+esc(w.title)+'</strong><div class="section-sub">'+esc(dateLabel(w.starts_at))+' · '+wr.length+' peserta · <span class="status '+(w.status==='published'?'':'pending')+'">'+esc(w.status)+'</span></div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="secondary-btn" type="button" data-webinar-edit="'+esc(w.id)+'">Edit</button><button class="secondary-btn" type="button" data-webinar-toggle="'+esc(w.id)+'" data-next-status="'+(w.status==='published'?'draft':'published')+'">'+(w.status==='published'?'Jadikan Draft':'Publikasikan')+'</button></div></div><p class="section-sub">'+esc(w.description||'Tanpa deskripsi')+'</p>'+(w.meeting_url?'<p><a href="'+esc(w.meeting_url)+'" target="_blank" rel="noopener noreferrer">Buka tautan webinar</a></p>':'')+'<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">Lihat peserta ('+wr.length+')</summary><div style="margin-top:8px">'+(people||'<p class="section-sub">Belum ada pendaftar.</p>')+'</div></details></article>';
-      }).join(''):'<p class="section-sub">Belum ada webinar. Buat webinar pertama melalui formulir di atas.</p>';
-    }catch(e){msg('webinarAdminMessage','Gagal memuat webinar: '+e.message);list.innerHTML='';}
-  }
-  function resetForm(){const f=document.getElementById('webinarAdminForm');if(!f)return;f.reset();document.getElementById('webinarEditId').value='';document.getElementById('cancelWebinarEdit').hidden=true;document.getElementById('saveWebinarButton').textContent='Simpan Webinar';msg('webinarAdminFormMessage','');}
-  document.getElementById('webinarAdminForm')?.addEventListener('submit',async e=>{
-    e.preventDefault();const id=document.getElementById('webinarEditId').value;const start=document.getElementById('webinarStartsAt').value;const end=document.getElementById('webinarEndsAt').value;
-    if(end&&new Date(end)<=new Date(start)){msg('webinarAdminFormMessage','Waktu selesai harus setelah waktu mulai.');return;}
-    const payload={title:document.getElementById('webinarTitle').value.trim(),description:document.getElementById('webinarDescription').value.trim()||null,starts_at:new Date(start).toISOString(),ends_at:end?new Date(end).toISOString():null,meeting_url:document.getElementById('webinarMeetingUrl').value.trim()||null,status:document.getElementById('webinarStatus').value,updated_at:new Date().toISOString()};
-    const btn=document.getElementById('saveWebinarButton');btn.disabled=true;btn.textContent='Menyimpan...';
-    try{if(id)await api('webinars?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(payload)});else{payload.created_by=userId();await api('webinars',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(payload)});}resetForm();msg('webinarAdminFormMessage','Webinar berhasil disimpan.');await loadAdminWebinars();}
-    catch(err){msg('webinarAdminFormMessage','Gagal menyimpan: '+err.message);}finally{btn.disabled=false;}
-  });
-  document.getElementById('cancelWebinarEdit')?.addEventListener('click',resetForm);
-  document.getElementById('refreshAdminWebinars')?.addEventListener('click',loadAdminWebinars);
-  document.getElementById('webinarAdminList')?.addEventListener('click',async e=>{
-    const edit=e.target.closest('[data-webinar-edit]');
-    if(edit){const w=adminRows.find(x=>x.id===edit.dataset.webinarEdit);if(!w)return;document.getElementById('webinarEditId').value=w.id;document.getElementById('webinarTitle').value=w.title;document.getElementById('webinarDescription').value=w.description||'';document.getElementById('webinarStartsAt').value=dateInput(w.starts_at);document.getElementById('webinarEndsAt').value=dateInput(w.ends_at);document.getElementById('webinarMeetingUrl').value=w.meeting_url||'';document.getElementById('webinarStatus').value=w.status;document.getElementById('saveWebinarButton').textContent='Perbarui Webinar';document.getElementById('cancelWebinarEdit').hidden=false;document.getElementById('webinarAdminPanel').scrollIntoView({behavior:'smooth'});return;}
-    const toggle=e.target.closest('[data-webinar-toggle]');if(toggle){toggle.disabled=true;try{await api('webinars?id=eq.'+encodeURIComponent(toggle.dataset.webinarToggle),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({status:toggle.dataset.nextStatus,updated_at:new Date().toISOString()})});await loadAdminWebinars();}catch(err){showToast('Gagal mengubah status: '+err.message);toggle.disabled=false;}return;}
-    const attend=e.target.closest('[data-webinar-attend]');if(attend){attend.disabled=true;try{await api('webinar_registrations?id=eq.'+encodeURIComponent(attend.dataset.webinarAttend),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({status:'attended',attended_at:new Date().toISOString(),checked_by:userId()})});await loadAdminWebinars();}catch(err){showToast('Gagal mencatat kehadiran: '+err.message);attend.disabled=false;}}
-  });
-  async function loadMemberWebinars(){
-    const list=document.getElementById('memberWebinarList');if(!list)return;msg('memberWebinarMessage','Memuat jadwal webinar...');
-    try{
-      const [webinars,registrations]=await Promise.all([api('webinars?select=id,title,description,starts_at,ends_at,meeting_url,status&status=eq.published&starts_at=gte.'+encodeURIComponent(new Date(Date.now()-86400000).toISOString())+'&order=starts_at.asc'),api('webinar_registrations?select=id,webinar_id,status&user_id=eq.'+encodeURIComponent(userId()))]);
-      const registered=new Map((registrations||[]).map(r=>[r.webinar_id,r]));const items=webinars||[];msg('memberWebinarMessage',items.length+' webinar tersedia.');
-      list.innerHTML=items.length?items.map(w=>{const reg=registered.get(w.id);const past=new Date(w.starts_at)<new Date();const action=reg?'<span class="status">'+(reg.status==='attended'?'Sudah Hadir':reg.status==='registered'?'Anda Terdaftar':esc(reg.status))+'</span>':past?'<span class="status pending">Pendaftaran ditutup</span>':'<button class="primary-btn" type="button" data-webinar-register="'+esc(w.id)+'">Daftar Webinar</button>';const open=reg&&w.meeting_url&&new Date(w.starts_at)<=new Date(Date.now()+30*60000)&&new Date(w.starts_at)>=new Date(Date.now()-6*3600000)?'<a class="secondary-btn" href="'+esc(w.meeting_url)+'" target="_blank" rel="noopener noreferrer">Masuk Webinar</a>':'';return '<article class="card"><div class="pill" style="display:inline-block">WEBINAR</div><h3 style="margin:12px 0 6px">'+esc(w.title)+'</h3><p class="section-sub">'+esc(w.description||'')+'</p><p style="font-size:12px"><strong>Mulai:</strong> '+esc(dateLabel(w.starts_at))+(w.ends_at?'<br><strong>Selesai:</strong> '+esc(dateLabel(w.ends_at)):'')+'</p><div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">'+action+open+'</div></article>';}).join(''):'<div class="card"><p class="section-sub">Belum ada jadwal webinar yang dipublikasikan.</p></div>';
-    }catch(e){msg('memberWebinarMessage','Gagal memuat webinar: '+e.message);list.innerHTML='';}
-  }
-  document.getElementById('memberWebinarList')?.addEventListener('click',async e=>{const btn=e.target.closest('[data-webinar-register]');if(!btn)return;btn.disabled=true;btn.textContent='Mendaftarkan...';try{await api('webinar_registrations',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({webinar_id:btn.dataset.webinarRegister,user_id:userId()})});showToast('Pendaftaran webinar berhasil.');await loadMemberWebinars();}catch(err){showToast('Gagal mendaftar: '+err.message);btn.disabled=false;btn.textContent='Daftar Webinar';}});
-  document.getElementById('refreshMemberWebinars')?.addEventListener('click',loadMemberWebinars);
-  document.querySelector('.admin-sidebar a[href="#webinarAdminPanel"]')?.addEventListener('click',loadAdminWebinars);
-  window.loadAdminWebinars=loadAdminWebinars;window.loadMemberWebinars=loadMemberWebinars;
-})();
-</script>
-
 </body></html>');
     try {
       const response = await fetch(BASE + '/rest/v1/rpc/issue_training_certificate', {
@@ -3744,6 +3684,65 @@ async function loadAffiliateCenter() {
   document.querySelectorAll('.nav-btn[data-page="admin"]').forEach(b=>b.addEventListener('click',()=>setTimeout(loadAdminPayments,0)));
   window.loadPremiumPaymentAdmin=loadAdminPayments;
   document.addEventListener('DOMContentLoaded',()=>{loadPremiumBankSettings();loadMyPaymentConfirmation();loadAdminPayments();});
+})();
+</script>
+<script>
+(function () {
+  const BASE='https://slygdkibtwgepjxsndjo.supabase.co';
+  const KEY='sb_publishable_p73KNH6mm8h67Si6MNFWDA_gkWGqKc7';
+  const token=()=>sessionStorage.getItem('dcv_access_token')||'';
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const userId=()=>{try{const p=token().split('.')[1].replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(atob(p)).sub||'';}catch(_){return '';}};
+  async function api(path,options={}){if(!token())throw new Error('Sesi login tidak ditemukan. Silakan login kembali.');const response=await fetch(BASE+'/rest/v1/'+path,{...options,headers:{apikey:KEY,Authorization:'Bearer '+token(),...(options.headers||{})}});const raw=await response.text();let data=null;try{data=raw?JSON.parse(raw):null;}catch(_){data=raw;}if(!response.ok)throw new Error((data&&(data.message||data.details||data.hint))||'Permintaan gagal ('+response.status+').');return data;}
+  const dateLabel=v=>{if(!v)return '—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':d.toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'});};
+  const dateInput=v=>{if(!v)return '';const d=new Date(v);return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,16);};
+  const msg=(id,t)=>{const e=document.getElementById(id);if(e)e.textContent=t;};
+  let adminRows=[];
+  async function loadAdminWebinars(){
+    const list=document.getElementById('webinarAdminList');if(!list)return;msg('webinarAdminMessage','Memuat data webinar...');
+    try{
+      adminRows=await api('webinars?select=id,title,description,starts_at,ends_at,meeting_url,status,created_at&order=starts_at.desc')||[];
+      const regs=await api('webinar_registrations?select=id,webinar_id,user_id,status,registered_at,attended_at&order=registered_at.desc')||[];
+      const ids=[...new Set(regs.map(r=>r.user_id))];let profiles=[];
+      if(ids.length)profiles=await api('profiles?select=id,full_name,email&id=in.('+ids.join(',')+')')||[];
+      const pm=new Map(profiles.map(p=>[p.id,p]));
+      msg('webinarAdminMessage',adminRows.length+' webinar · '+regs.length+' pendaftaran tercatat.');
+      list.innerHTML=adminRows.length?adminRows.map(w=>{
+        const wr=regs.filter(r=>r.webinar_id===w.id);
+        const people=wr.map(r=>{const p=pm.get(r.user_id)||{};const status=({registered:'Terdaftar',attended:'Hadir',cancelled:'Batal',no_show:'Tidak hadir'}[r.status]||r.status);return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #e5e7eb"><div><strong>'+esc(p.full_name||'Member')+'</strong><small style="display:block;color:#64748b">'+esc(p.email||'')+' · '+esc(dateLabel(r.registered_at))+'</small></div><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="status '+(r.status==='attended'?'':'pending')+'">'+esc(status)+'</span>'+(r.status==='registered'?'<button class="secondary-btn" type="button" data-webinar-attend="'+esc(r.id)+'">Tandai Hadir</button>':'')+'</div></div>';}).join('');
+        return '<article class="card" style="margin:12px 0;text-align:left"><div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong>'+esc(w.title)+'</strong><div class="section-sub">'+esc(dateLabel(w.starts_at))+' · '+wr.length+' peserta · <span class="status '+(w.status==='published'?'':'pending')+'">'+esc(w.status)+'</span></div></div><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="secondary-btn" type="button" data-webinar-edit="'+esc(w.id)+'">Edit</button><button class="secondary-btn" type="button" data-webinar-toggle="'+esc(w.id)+'" data-next-status="'+(w.status==='published'?'draft':'published')+'">'+(w.status==='published'?'Jadikan Draft':'Publikasikan')+'</button></div></div><p class="section-sub">'+esc(w.description||'Tanpa deskripsi')+'</p>'+(w.meeting_url?'<p><a href="'+esc(w.meeting_url)+'" target="_blank" rel="noopener noreferrer">Buka tautan webinar</a></p>':'')+'<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;font-weight:700">Lihat peserta ('+wr.length+')</summary><div style="margin-top:8px">'+(people||'<p class="section-sub">Belum ada pendaftar.</p>')+'</div></details></article>';
+      }).join(''):'<p class="section-sub">Belum ada webinar. Buat webinar pertama melalui formulir di atas.</p>';
+    }catch(e){msg('webinarAdminMessage','Gagal memuat webinar: '+e.message);list.innerHTML='';}
+  }
+  function resetForm(){const f=document.getElementById('webinarAdminForm');if(!f)return;f.reset();document.getElementById('webinarEditId').value='';document.getElementById('cancelWebinarEdit').hidden=true;document.getElementById('saveWebinarButton').textContent='Simpan Webinar';msg('webinarAdminFormMessage','');}
+  document.getElementById('webinarAdminForm')?.addEventListener('submit',async e=>{
+    e.preventDefault();const id=document.getElementById('webinarEditId').value;const start=document.getElementById('webinarStartsAt').value;const end=document.getElementById('webinarEndsAt').value;
+    if(end&&new Date(end)<=new Date(start)){msg('webinarAdminFormMessage','Waktu selesai harus setelah waktu mulai.');return;}
+    const payload={title:document.getElementById('webinarTitle').value.trim(),description:document.getElementById('webinarDescription').value.trim()||null,starts_at:new Date(start).toISOString(),ends_at:end?new Date(end).toISOString():null,meeting_url:document.getElementById('webinarMeetingUrl').value.trim()||null,status:document.getElementById('webinarStatus').value,updated_at:new Date().toISOString()};
+    const btn=document.getElementById('saveWebinarButton');btn.disabled=true;btn.textContent='Menyimpan...';
+    try{if(id)await api('webinars?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(payload)});else{payload.created_by=userId();await api('webinars',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify(payload)});}resetForm();msg('webinarAdminFormMessage','Webinar berhasil disimpan.');await loadAdminWebinars();}
+    catch(err){msg('webinarAdminFormMessage','Gagal menyimpan: '+err.message);}finally{btn.disabled=false;}
+  });
+  document.getElementById('cancelWebinarEdit')?.addEventListener('click',resetForm);
+  document.getElementById('refreshAdminWebinars')?.addEventListener('click',loadAdminWebinars);
+  document.getElementById('webinarAdminList')?.addEventListener('click',async e=>{
+    const edit=e.target.closest('[data-webinar-edit]');
+    if(edit){const w=adminRows.find(x=>x.id===edit.dataset.webinarEdit);if(!w)return;document.getElementById('webinarEditId').value=w.id;document.getElementById('webinarTitle').value=w.title;document.getElementById('webinarDescription').value=w.description||'';document.getElementById('webinarStartsAt').value=dateInput(w.starts_at);document.getElementById('webinarEndsAt').value=dateInput(w.ends_at);document.getElementById('webinarMeetingUrl').value=w.meeting_url||'';document.getElementById('webinarStatus').value=w.status;document.getElementById('saveWebinarButton').textContent='Perbarui Webinar';document.getElementById('cancelWebinarEdit').hidden=false;document.getElementById('webinarAdminPanel').scrollIntoView({behavior:'smooth'});return;}
+    const toggle=e.target.closest('[data-webinar-toggle]');if(toggle){toggle.disabled=true;try{await api('webinars?id=eq.'+encodeURIComponent(toggle.dataset.webinarToggle),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({status:toggle.dataset.nextStatus,updated_at:new Date().toISOString()})});await loadAdminWebinars();}catch(err){showToast('Gagal mengubah status: '+err.message);toggle.disabled=false;}return;}
+    const attend=e.target.closest('[data-webinar-attend]');if(attend){attend.disabled=true;try{await api('webinar_registrations?id=eq.'+encodeURIComponent(attend.dataset.webinarAttend),{method:'PATCH',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({status:'attended',attended_at:new Date().toISOString(),checked_by:userId()})});await loadAdminWebinars();}catch(err){showToast('Gagal mencatat kehadiran: '+err.message);attend.disabled=false;}}
+  });
+  async function loadMemberWebinars(){
+    const list=document.getElementById('memberWebinarList');if(!list)return;msg('memberWebinarMessage','Memuat jadwal webinar...');
+    try{
+      const [webinars,registrations]=await Promise.all([api('webinars?select=id,title,description,starts_at,ends_at,meeting_url,status&status=eq.published&starts_at=gte.'+encodeURIComponent(new Date(Date.now()-86400000).toISOString())+'&order=starts_at.asc'),api('webinar_registrations?select=id,webinar_id,status&user_id=eq.'+encodeURIComponent(userId()))]);
+      const registered=new Map((registrations||[]).map(r=>[r.webinar_id,r]));const items=webinars||[];msg('memberWebinarMessage',items.length+' webinar tersedia.');
+      list.innerHTML=items.length?items.map(w=>{const reg=registered.get(w.id);const past=new Date(w.starts_at)<new Date();const action=reg?'<span class="status">'+(reg.status==='attended'?'Sudah Hadir':reg.status==='registered'?'Anda Terdaftar':esc(reg.status))+'</span>':past?'<span class="status pending">Pendaftaran ditutup</span>':'<button class="primary-btn" type="button" data-webinar-register="'+esc(w.id)+'">Daftar Webinar</button>';const open=reg&&w.meeting_url&&new Date(w.starts_at)<=new Date(Date.now()+30*60000)&&new Date(w.starts_at)>=new Date(Date.now()-6*3600000)?'<a class="secondary-btn" href="'+esc(w.meeting_url)+'" target="_blank" rel="noopener noreferrer">Masuk Webinar</a>':'';return '<article class="card"><div class="pill" style="display:inline-block">WEBINAR</div><h3 style="margin:12px 0 6px">'+esc(w.title)+'</h3><p class="section-sub">'+esc(w.description||'')+'</p><p style="font-size:12px"><strong>Mulai:</strong> '+esc(dateLabel(w.starts_at))+(w.ends_at?'<br><strong>Selesai:</strong> '+esc(dateLabel(w.ends_at)):'')+'</p><div style="display:flex;gap:9px;align-items:center;flex-wrap:wrap">'+action+open+'</div></article>';}).join(''):'<div class="card"><p class="section-sub">Belum ada jadwal webinar yang dipublikasikan.</p></div>';
+    }catch(e){msg('memberWebinarMessage','Gagal memuat webinar: '+e.message);list.innerHTML='';}
+  }
+  document.getElementById('memberWebinarList')?.addEventListener('click',async e=>{const btn=e.target.closest('[data-webinar-register]');if(!btn)return;btn.disabled=true;btn.textContent='Mendaftarkan...';try{await api('webinar_registrations',{method:'POST',headers:{'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({webinar_id:btn.dataset.webinarRegister,user_id:userId()})});showToast('Pendaftaran webinar berhasil.');await loadMemberWebinars();}catch(err){showToast('Gagal mendaftar: '+err.message);btn.disabled=false;btn.textContent='Daftar Webinar';}});
+  document.getElementById('refreshMemberWebinars')?.addEventListener('click',loadMemberWebinars);
+  document.querySelector('.admin-sidebar a[href="#webinarAdminPanel"]')?.addEventListener('click',loadAdminWebinars);
+  window.loadAdminWebinars=loadAdminWebinars;window.loadMemberWebinars=loadMemberWebinars;
 })();
 </script>
 </body>
